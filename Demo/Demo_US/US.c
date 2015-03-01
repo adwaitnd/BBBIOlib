@@ -129,7 +129,7 @@ int main(void)
 	tcflush(fd,TCIFLUSH);
 	tcsetattr(fd,TCSANOW,&uart_set);
 	// Setup volume 9x & gain 2 
-	write(fd,"vP",2);
+	write(fd,"vZ",2);
 	usleep(300000);
 	if(read(fd,&rec_buf,sizeof(rec_buf)) > 0)
 	printf("%s", rec_buf);
