@@ -125,12 +125,12 @@ int main(void)
 	tcsetattr(fd,TCSANOW,&uart_set);
 	// Setup volume 
 	write(fd,"v1",2);
-	usleep(100000);
+	usleep(300000);
 	if(read(fd,&rec_buf,sizeof(rec_buf)) > 0)
 	printf("%s", rec_buf);
 	// Fire the chirp!
 	write(fd, "f", 1);
-	//usleep(100000);
+	usleep(100000);
 	tcflush(fd,TCIFLUSH);
 	tcsetattr(fd,TCSANOW,&old);
 	close(fd);
