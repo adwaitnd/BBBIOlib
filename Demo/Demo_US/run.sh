@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PERIOD=600
+PERIOD=60
 DELAY=2
 LOCATION=TEST
 
@@ -42,6 +42,8 @@ do
 	echo --- Collecting Sample $i ---
 	chrt -f 99 ./US.out
 	sleep 1
+	chrt -f 99 ./Tone.out
+	sleep 0.5
 	DATE=$(date +"%Y-%m-%d_%H:%M:%S")
 	streamer -f jpeg -o $DATE.jpeg	
 	sleep $DELAY
@@ -50,11 +52,11 @@ do
   DAY=$(date +"%Y-%m-%d")
   #dump to server
   sshpass -p 'dump1234' ssh dump@sensor.andrew.cmu.edu "mkdir -p ~/data/$LOCATION/$DAY/"
-  sshpass -p 'dump1234' scp /home/debian/BBBIOlib/Demo/Demo_US/*.{dat,jpeg} dump@sensor.andrew.cmu.edu:~/data/$LOCATION/$DAY/
+  sshpass -p 'dump1234' scp /home/debian/BBBIOlib/Demo/Demo_US/*.{dat,jpeg,raw} dump@sensor.andrew.cmu.edu:~/data/$LOCATION/$DAY/
   if [ $? -eq 0 ]
   then
     echo "Data dump complete, cleaning up ..."
-    rm /home/debian/BBBIOlib/Demo/Demo_US/*.{dat,jpeg}
+    rm /home/debian/BBBIOlib/Demo/Demo_US/*.{dat,jpeg,raw}
   fi
 
   # Take some rest
