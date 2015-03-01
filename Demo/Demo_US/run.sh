@@ -1,8 +1,8 @@
 #!/bin/bash
 
-PERIOD=30
+PERIOD=600
 DELAY=2
-LOCATION=GATES
+LOCATION=SCAIF
 
 while true
 do

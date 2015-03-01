@@ -45,10 +45,10 @@ ${LIB_PATH}/libBBBio.a : ${LIB_PATH}/BBBiolib.c ${LIB_PATH}/BBBiolib.h BBBiolib_
 #	cp ${LIB_PATH}${LIB_PATH}/libBBBio.a ./
 
 ${MATLAB_PATH}/Prep.a : do_script
-#${MATLAB_PATH}/Prep_fft.a : do_script
+${MATLAB_PATH}/Prep_fft.a : do_script
 do_script:
 	cd ${MATLAB_PATH} && make -f Prep_rtw.mk
-	#cd ${MATLAB_PATH2} && make -f Prep_fft_rtw.mk
+	cd ${MATLAB_PATH2} && make -f Prep_fft_rtw.mk
 
 BBBiolib_PWMSS.o : ${LIB_PATH}/BBBiolib_PWMSS.c ${LIB_PATH}/BBBiolib_PWMSS.h
 	${CC} -c ${LIB_PATH}/BBBiolib_PWMSS.c -o ${LIB_PATH}/BBBiolib_PWMSS.o -W 
@@ -116,7 +116,8 @@ Sound_Capture_ADC : ${DEMO_PATH}/Demo_ADC/ADC.c ${LIB_PATH}/libBBBio.a
 	${CC} -o Sound_Capture_ADC.out ${DEMO_PATH}/Demo_Sound_Capture_ADC/Capture.c -L ${LIB_PATH} -I ${INCLUDE_PATH} -l${LIBRARY} -lm
 
 US : ${DEMO_PATH}/Demo_ADC/ADC.c ${LIB_PATH}/libBBBio.a ${MATLAB_PATH}/Prep.a 
-	${CC} -o ${DEMO_PATH}/Demo_US/US.out ${DEMO_PATH}/Demo_US/US.c -L ${LIB_PATH} ${MATLAB_PATH}/Prep.a -I ${INCLUDE_PATH} -I ${MATLAB_PATH} -I ${MATLAB_PATH2} -l${LIBRARY} -lm
+	${CC} -o ${DEMO_PATH}/Demo_US/US.out ${DEMO_PATH}/Demo_US/US.c -L ${LIB_PATH} ${MATLAB_PATH}/Prep.a -I ${INCLUDE_PATH} -I ${MATLAB_PATH} -l${LIBRARY} -lm
+	${CC} -o ${DEMO_PATH}/Demo_US/US_online.out ${DEMO_PATH}/Demo_US/US_online.c -L ${LIB_PATH} ${MATLAB_PATH2}/Prep_fft.a -I ${INCLUDE_PATH} -I ${MATLAB_PATH2} -l${LIBRARY} -lm
 	${CC} -o ${DEMO_PATH}/Demo_US/Tone.out ${DEMO_PATH}/Demo_US/Tone.c -L ${LIB_PATH} ${MATLAB_PATH}/Prep.a -I ${INCLUDE_PATH} -I ${MATLAB_PATH} -I ${MATLAB_PATH2} -l${LIBRARY} -lm
 #---------------------------------------------------
 #---------------------------------------------------
@@ -147,4 +148,4 @@ VD : ${LAB_PATH}Voice_Door/voice_door.cpp ${LIB_PATH}/libBBBio.a
 
 .PHONY: clean
 clean :
-	rm -rf ${LIB_PATH}/*.o ${LIB_PATH}/libBBBio.a  ${MATLAB_PATH}/Prep.a ${MATLAB_PATH}/Prep_fft.a *.out
+	rm -rf ${LIB_PATH}/*.o ${LIB_PATH}/libBBBio.a  ${MATLAB_PATH}/Prep.a ${MATLAB_PATH2}/Prep_fft.a *.out

@@ -8,15 +8,13 @@
 #include <termios.h>
 #include "BBBiolib.h"
 #include "rt_nonfinite.h"
-#include "Prep.h"
-#include "Prep_emxutil.h"
-#include "abs.h"
-#include "bsxfun.h"
+//#include "Prep.h"
+#include "Prep_fft_emxutil.h"
+//#include "abs.h"
+//#include "bsxfun.h"
 #include "fft.h"
-#include "linspace.h"
-
-
-//#include "Prep_fft.h"
+//#include "linspace.h"
+#include "Prep_fft.h"
 
 /* ----------------------------------------------------------- */
 //#define BUFFER_SIZE 48000
@@ -49,7 +47,7 @@ int main(int argc, char* argv[])
 	char raw_data_name[128];
 	FILE* data_file;
 	FILE* filter_fd;
-	char fname[] = FILTER_FILE;
+	//char fname[] = FILTER_FILE;
 
 
 	char UART_PATH[30] = "/dev/ttyO5";
