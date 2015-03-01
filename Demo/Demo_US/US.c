@@ -103,6 +103,7 @@ int main(void)
 	time(&rawtime);
 
 	/* Start playback */
+	
 	//Using uart now 
 	fd = open(UART_PATH, O_RDWR | O_NOCTTY);
 	if(fd < 0){
@@ -123,8 +124,8 @@ int main(void)
 	//clean the line and set the attributes
 	tcflush(fd,TCIFLUSH);
 	tcsetattr(fd,TCSANOW,&uart_set);
-	// Setup volume 
-	write(fd,"v1",2);
+	// Setup volume 9x & gain 2 
+	write(fd,"vP",2);
 	usleep(300000);
 	if(read(fd,&rec_buf,sizeof(rec_buf)) > 0)
 	printf("%s", rec_buf);
@@ -138,7 +139,7 @@ int main(void)
 	//iolib_delay_ms(10);
 	//BBBIO_GPIO_low(BBBIO_GPIO1, BBBIO_GPIO_PIN_17);
 
-
+	
 	/* Start capture */
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
 	BBBIO_ADCTSC_work(SAMPLE_SIZE);
