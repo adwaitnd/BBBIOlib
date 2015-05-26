@@ -19,7 +19,8 @@
 
 /* Function Declarations */
 extern void Prep(const float raw_data[192000], const float m_filter[100000],
-                 emxArray_real32_T *prc_data);
+                 float FS, float START_F, float END_F, emxArray_real32_T
+                 *prc_data);
 
 #endif
 

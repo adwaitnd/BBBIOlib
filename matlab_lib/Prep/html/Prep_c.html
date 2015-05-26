@@ -61,70 +61,75 @@
 <a name="50"><font color="#888888 "><i>   50   </i></font></a>  <b>}</b>
 <a name="51"><font color="#888888 "><i>   51   </i></font></a><b>}</b>
 <a name="52"><font color="#888888 "><i>   52   </i></font></a>
-<a name="53"><font color="#888888 "><i>   53   </i></font></a><font color="#112266"><b>void</b></font> <a name="fcn_Prep">Prep</a>(<font color="#112266"><b>const</b></font> <font color="#112266"><b>float</b></font> raw_data[192000], <font color="#112266"><b>const</b></font> <font color="#112266"><b>float</b></font> m_filter[100000],
-<a name="54"><font color="#888888 "><i>   54   </i></font></a>          <a href="Prep_types_h.html#type_emxArray_real32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_emxArray_real32_T');" target="_self"><font color="#1122aa">emxArray_real32_T</font></a> *prc_data)
+<a name="53"><font color="#888888 "><i>   53   </i></font></a><font color="#112266"><b>void</b></font> <a name="fcn_Prep">Prep</a>(<font color="#112266"><b>const</b></font> <font color="#112266"><b>float</b></font> raw_data[192000], <font color="#112266"><b>const</b></font> <font color="#112266"><b>float</b></font> m_filter[100000], <font color="#112266"><b>float</b></font> FS,
+<a name="54"><font color="#888888 "><i>   54   </i></font></a>          <font color="#112266"><b>float</b></font> START_F, <font color="#112266"><b>float</b></font> END_F, <a href="Prep_types_h.html#type_emxArray_real32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_emxArray_real32_T');" target="_self"><font color="#1122aa">emxArray_real32_T</font></a> *prc_data)
 <a name="55"><font color="#888888 "><i>   55   </i></font></a><b>{</b>
-<a name="56"><font color="#888888 "><i>   56   </i></font></a>  <font color="#112266"><b>static</b></font> <font color="#112266"><b>double</b></font> f[131073];
-<a name="57"><font color="#888888 "><i>   57   </i></font></a>  <font color="#112266"><b>int</b></font> i0;
-<a name="58"><font color="#888888 "><i>   58   </i></font></a>  <font color="#112266"><b>static</b></font> <a href="rtwtypes_h.html#type_creal32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_creal32_T');" target="_self"><font color="#1122aa">creal32_T</font></a> tmp_data[262144];
-<a name="59"><font color="#888888 "><i>   59   </i></font></a>  <font color="#112266"><b>static</b></font> <a href="rtwtypes_h.html#type_creal32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_creal32_T');" target="_self"><font color="#1122aa">creal32_T</font></a> Y_temp[262144];
-<a name="60"><font color="#888888 "><i>   60   </i></font></a>  <font color="#112266"><b>static</b></font> <a href="rtwtypes_h.html#type_creal32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_creal32_T');" target="_self"><font color="#1122aa">creal32_T</font></a> b_tmp_data[262144];
-<a name="61"><font color="#888888 "><i>   61   </i></font></a>  <font color="#112266"><b>static</b></font> <a href="rtwtypes_h.html#type_creal32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_creal32_T');" target="_self"><font color="#1122aa">creal32_T</font></a> b_Y_temp[262144];
-<a name="62"><font color="#888888 "><i>   62   </i></font></a>  <font color="#112266"><b>static</b></font> <font color="#112266"><b>float</b></font> fv0[131073];
-<a name="63"><font color="#888888 "><i>   63   </i></font></a>  <a href="rtwtypes_h.html#type_boolean_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_boolean_T');" target="_self"><font color="#1122aa">boolean_T</font></a> bv0[131073];
-<a name="64"><font color="#888888 "><i>   64   </i></font></a>  <a href="Prep_types_h.html#type_emxArray_int32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_emxArray_int32_T');" target="_self"><font color="#1122aa">emxArray_int32_T</font></a> *r0;
-<a name="65"><font color="#888888 "><i>   65   </i></font></a>  <font color="#112266"><b>int</b></font> loop_ub;
-<a name="66"><font color="#888888 "><i>   66   </i></font></a>
-<a name="67"><font color="#888888 "><i>   67   </i></font></a>  <font color="#117755"><i>/*  PREPROCESSING Summary of this function goes here */</i></font>
-<a name="68"><font color="#888888 "><i>   68   </i></font></a>  <font color="#117755"><i>/*  Take the raw data, match filtered it and output in frequency domain */</i></font>
-<a name="69"><font color="#888888 "><i>   69   </i></font></a>  <font color="#117755"><i>/* coder.inline('never'); */</i></font>
-<a name="70"><font color="#888888 "><i>   70   </i></font></a>  <font color="#117755"><i>/*  Next power of 2 from length of y */</i></font>
-<a name="71"><font color="#888888 "><i>   71   </i></font></a>  <a href="linspace_c.html#fcn_linspace" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_linspace');" target="_self"><font color="#1122aa">linspace</font></a>(f);
-<a name="72"><font color="#888888 "><i>   72   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 131073; i0++) <b>{</b>
-<a name="73"><font color="#888888 "><i>   73   </i></font></a>    f[i0] *= 96000.0;
-<a name="74"><font color="#888888 "><i>   74   </i></font></a>  <b>}</b>
-<a name="75"><font color="#888888 "><i>   75   </i></font></a>
-<a name="76"><font color="#888888 "><i>   76   </i></font></a>  <font color="#117755"><i>/*  frequency band */</i></font>
-<a name="77"><font color="#888888 "><i>   77   </i></font></a>  <a href="fft_c.html#fcn_fft" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_fft');" target="_self"><font color="#1122aa">fft</font></a>(raw_data, tmp_data);
-<a name="78"><font color="#888888 "><i>   78   </i></font></a>  <a href="fft_c.html#fcn_b_fft" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_b_fft');" target="_self"><font color="#1122aa">b_fft</font></a>(m_filter, Y_temp);
-<a name="79"><font color="#888888 "><i>   79   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 262144; i0++) <b>{</b>
-<a name="80"><font color="#888888 "><i>   80   </i></font></a>    <font color="#112266"><b>if</b></font> (tmp_data[i0].im == 0.0F) <b>{</b>
-<a name="81"><font color="#888888 "><i>   81   </i></font></a>      b_tmp_data[i0].re = tmp_data[i0].re / 192000.0F;
-<a name="82"><font color="#888888 "><i>   82   </i></font></a>      b_tmp_data[i0].im = 0.0F;
-<a name="83"><font color="#888888 "><i>   83   </i></font></a>    <b>}</b> <font color="#112266"><b>else</b></font> <font color="#112266"><b>if</b></font> (tmp_data[i0].re == 0.0F) <b>{</b>
-<a name="84"><font color="#888888 "><i>   84   </i></font></a>      b_tmp_data[i0].re = 0.0F;
-<a name="85"><font color="#888888 "><i>   85   </i></font></a>      b_tmp_data[i0].im = tmp_data[i0].im / 192000.0F;
-<a name="86"><font color="#888888 "><i>   86   </i></font></a>    <b>}</b> <font color="#112266"><b>else</b></font> <b>{</b>
-<a name="87"><font color="#888888 "><i>   87   </i></font></a>      b_tmp_data[i0].re = tmp_data[i0].re / 192000.0F;
-<a name="88"><font color="#888888 "><i>   88   </i></font></a>      b_tmp_data[i0].im = tmp_data[i0].im / 192000.0F;
-<a name="89"><font color="#888888 "><i>   89   </i></font></a>    <b>}</b>
-<a name="90"><font color="#888888 "><i>   90   </i></font></a>
-<a name="91"><font color="#888888 "><i>   91   </i></font></a>    b_Y_temp[i0].re = Y_temp[i0].re;
-<a name="92"><font color="#888888 "><i>   92   </i></font></a>    b_Y_temp[i0].im = -Y_temp[i0].im;
-<a name="93"><font color="#888888 "><i>   93   </i></font></a>  <b>}</b>
-<a name="94"><font color="#888888 "><i>   94   </i></font></a>
-<a name="95"><font color="#888888 "><i>   95   </i></font></a>  <a href="bsxfun_c.html#fcn_bsxfun" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_bsxfun');" target="_self"><font color="#1122aa">bsxfun</font></a>(b_tmp_data, b_Y_temp, tmp_data);
-<a name="96"><font color="#888888 "><i>   96   </i></font></a>  <a href="abs_c.html#fcn_b_abs" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_b_abs');" target="_self"><font color="#1122aa">b_abs</font></a>(*(<a href="rtwtypes_h.html#type_creal32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_creal32_T');" target="_self"><font color="#1122aa">creal32_T</font></a> (*)[131073])&amp;tmp_data[0], fv0);
-<a name="97"><font color="#888888 "><i>   97   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 131073; i0++) <b>{</b>
-<a name="98"><font color="#888888 "><i>   98   </i></font></a>    bv0[i0] = ((20000.0 &lt; f[i0]) &amp;&amp; (f[i0] &lt; 23000.0));
-<a name="99"><font color="#888888 "><i>   99   </i></font></a>  <b>}</b>
-<a name="100"><font color="#888888 "><i>  100   </i></font></a>
-<a name="101"><font color="#888888 "><i>  101   </i></font></a>  <a href="Prep_emxutil_c.html#fcn_emxInit_int32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxInit_int32_T');" target="_self"><font color="#1122aa">emxInit_int32_T</font></a>(&amp;r0, 2);
-<a name="102"><font color="#888888 "><i>  102   </i></font></a>  <a href="#fcn_eml_li_find" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_eml_li_find');" target="_self"><font color="#1122aa">eml_li_find</font></a>(bv0, r0);
-<a name="103"><font color="#888888 "><i>  103   </i></font></a>  i0 = prc_data-&gt;size[0] * prc_data-&gt;size[1];
-<a name="104"><font color="#888888 "><i>  104   </i></font></a>  prc_data-&gt;size[0] = 1;
-<a name="105"><font color="#888888 "><i>  105   </i></font></a>  prc_data-&gt;size[1] = r0-&gt;size[1];
-<a name="106"><font color="#888888 "><i>  106   </i></font></a>  <a href="Prep_emxutil_c.html#fcn_emxEnsureCapacity" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxEnsureCapacity');" target="_self"><font color="#1122aa">emxEnsureCapacity</font></a>((<a href="Prep_types_h.html#type_emxArray__common" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_emxArray__common');" target="_self"><font color="#1122aa">emxArray__common</font></a> *)prc_data, i0, (<font color="#112266"><b>int</b></font>)<font color="#112266"><b>sizeof</b></font>(<font color="#112266"><b>float</b></font>));
-<a name="107"><font color="#888888 "><i>  107   </i></font></a>  loop_ub = r0-&gt;size[0] * r0-&gt;size[1];
-<a name="108"><font color="#888888 "><i>  108   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; loop_ub; i0++) <b>{</b>
-<a name="109"><font color="#888888 "><i>  109   </i></font></a>    prc_data-&gt;data[i0] = 2.0F * fv0[r0-&gt;data[i0] - 1];
-<a name="110"><font color="#888888 "><i>  110   </i></font></a>  <b>}</b>
-<a name="111"><font color="#888888 "><i>  111   </i></font></a>
-<a name="112"><font color="#888888 "><i>  112   </i></font></a>  <a href="Prep_emxutil_c.html#fcn_emxFree_int32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxFree_int32_T');" target="_self"><font color="#1122aa">emxFree_int32_T</font></a>(&amp;r0);
-<a name="113"><font color="#888888 "><i>  113   </i></font></a><b>}</b>
-<a name="114"><font color="#888888 "><i>  114   </i></font></a>
-<a name="115"><font color="#888888 "><i>  115   </i></font></a><font color="#117755"><i>/* End of code generation (Prep.c) */</i></font>
-<a name="116"><font color="#888888 "><i>  116   </i></font></a></pre>
+<a name="56"><font color="#888888 "><i>   56   </i></font></a>  <font color="#112266"><b>float</b></font> y;
+<a name="57"><font color="#888888 "><i>   57   </i></font></a>  <font color="#112266"><b>static</b></font> <font color="#112266"><b>double</b></font> dv0[131073];
+<a name="58"><font color="#888888 "><i>   58   </i></font></a>  <font color="#112266"><b>static</b></font> <font color="#112266"><b>float</b></font> f[131073];
+<a name="59"><font color="#888888 "><i>   59   </i></font></a>  <font color="#112266"><b>int</b></font> i0;
+<a name="60"><font color="#888888 "><i>   60   </i></font></a>  <font color="#112266"><b>static</b></font> <a href="rtwtypes_h.html#type_creal32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_creal32_T');" target="_self"><font color="#1122aa">creal32_T</font></a> tmp_data[262144];
+<a name="61"><font color="#888888 "><i>   61   </i></font></a>  <font color="#112266"><b>static</b></font> <a href="rtwtypes_h.html#type_creal32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_creal32_T');" target="_self"><font color="#1122aa">creal32_T</font></a> Y_temp[262144];
+<a name="62"><font color="#888888 "><i>   62   </i></font></a>  <font color="#112266"><b>static</b></font> <a href="rtwtypes_h.html#type_creal32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_creal32_T');" target="_self"><font color="#1122aa">creal32_T</font></a> b_tmp_data[262144];
+<a name="63"><font color="#888888 "><i>   63   </i></font></a>  <font color="#112266"><b>static</b></font> <a href="rtwtypes_h.html#type_creal32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_creal32_T');" target="_self"><font color="#1122aa">creal32_T</font></a> b_Y_temp[262144];
+<a name="64"><font color="#888888 "><i>   64   </i></font></a>  <font color="#112266"><b>static</b></font> <font color="#112266"><b>float</b></font> fv0[131073];
+<a name="65"><font color="#888888 "><i>   65   </i></font></a>  <a href="rtwtypes_h.html#type_boolean_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_boolean_T');" target="_self"><font color="#1122aa">boolean_T</font></a> b_START_F[131073];
+<a name="66"><font color="#888888 "><i>   66   </i></font></a>  <a href="Prep_types_h.html#type_emxArray_int32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_emxArray_int32_T');" target="_self"><font color="#1122aa">emxArray_int32_T</font></a> *r0;
+<a name="67"><font color="#888888 "><i>   67   </i></font></a>  <font color="#112266"><b>int</b></font> loop_ub;
+<a name="68"><font color="#888888 "><i>   68   </i></font></a>
+<a name="69"><font color="#888888 "><i>   69   </i></font></a>  <font color="#117755"><i>/*  PREPROCESSING Summary of this function goes here */</i></font>
+<a name="70"><font color="#888888 "><i>   70   </i></font></a>  <font color="#117755"><i>/*  Take the raw data, match filtered it and output in frequency domain */</i></font>
+<a name="71"><font color="#888888 "><i>   71   </i></font></a>  <font color="#117755"><i>/*  FS = 192000; */</i></font>
+<a name="72"><font color="#888888 "><i>   72   </i></font></a>  <font color="#117755"><i>/*  START_F = 20000; */</i></font>
+<a name="73"><font color="#888888 "><i>   73   </i></font></a>  <font color="#117755"><i>/*  END_F = 23000; */</i></font>
+<a name="74"><font color="#888888 "><i>   74   </i></font></a>  <font color="#117755"><i>/*  Next power of 2 from length of y */</i></font>
+<a name="75"><font color="#888888 "><i>   75   </i></font></a>  y = FS / 2.0F;
+<a name="76"><font color="#888888 "><i>   76   </i></font></a>  <a href="linspace_c.html#fcn_linspace" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_linspace');" target="_self"><font color="#1122aa">linspace</font></a>(dv0);
+<a name="77"><font color="#888888 "><i>   77   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 131073; i0++) <b>{</b>
+<a name="78"><font color="#888888 "><i>   78   </i></font></a>    f[i0] = y * (<font color="#112266"><b>float</b></font>)dv0[i0];
+<a name="79"><font color="#888888 "><i>   79   </i></font></a>  <b>}</b>
+<a name="80"><font color="#888888 "><i>   80   </i></font></a>
+<a name="81"><font color="#888888 "><i>   81   </i></font></a>  <font color="#117755"><i>/*  frequency band */</i></font>
+<a name="82"><font color="#888888 "><i>   82   </i></font></a>  <a href="fft_c.html#fcn_fft" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_fft');" target="_self"><font color="#1122aa">fft</font></a>(raw_data, tmp_data);
+<a name="83"><font color="#888888 "><i>   83   </i></font></a>  <a href="fft_c.html#fcn_b_fft" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_b_fft');" target="_self"><font color="#1122aa">b_fft</font></a>(m_filter, Y_temp);
+<a name="84"><font color="#888888 "><i>   84   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 262144; i0++) <b>{</b>
+<a name="85"><font color="#888888 "><i>   85   </i></font></a>    <font color="#112266"><b>if</b></font> (tmp_data[i0].im == 0.0F) <b>{</b>
+<a name="86"><font color="#888888 "><i>   86   </i></font></a>      b_tmp_data[i0].re = tmp_data[i0].re / 192000.0F;
+<a name="87"><font color="#888888 "><i>   87   </i></font></a>      b_tmp_data[i0].im = 0.0F;
+<a name="88"><font color="#888888 "><i>   88   </i></font></a>    <b>}</b> <font color="#112266"><b>else</b></font> <font color="#112266"><b>if</b></font> (tmp_data[i0].re == 0.0F) <b>{</b>
+<a name="89"><font color="#888888 "><i>   89   </i></font></a>      b_tmp_data[i0].re = 0.0F;
+<a name="90"><font color="#888888 "><i>   90   </i></font></a>      b_tmp_data[i0].im = tmp_data[i0].im / 192000.0F;
+<a name="91"><font color="#888888 "><i>   91   </i></font></a>    <b>}</b> <font color="#112266"><b>else</b></font> <b>{</b>
+<a name="92"><font color="#888888 "><i>   92   </i></font></a>      b_tmp_data[i0].re = tmp_data[i0].re / 192000.0F;
+<a name="93"><font color="#888888 "><i>   93   </i></font></a>      b_tmp_data[i0].im = tmp_data[i0].im / 192000.0F;
+<a name="94"><font color="#888888 "><i>   94   </i></font></a>    <b>}</b>
+<a name="95"><font color="#888888 "><i>   95   </i></font></a>
+<a name="96"><font color="#888888 "><i>   96   </i></font></a>    b_Y_temp[i0].re = Y_temp[i0].re;
+<a name="97"><font color="#888888 "><i>   97   </i></font></a>    b_Y_temp[i0].im = -Y_temp[i0].im;
+<a name="98"><font color="#888888 "><i>   98   </i></font></a>  <b>}</b>
+<a name="99"><font color="#888888 "><i>   99   </i></font></a>
+<a name="100"><font color="#888888 "><i>  100   </i></font></a>  <a href="bsxfun_c.html#fcn_bsxfun" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_bsxfun');" target="_self"><font color="#1122aa">bsxfun</font></a>(b_tmp_data, b_Y_temp, tmp_data);
+<a name="101"><font color="#888888 "><i>  101   </i></font></a>  <a href="abs_c.html#fcn_b_abs" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_b_abs');" target="_self"><font color="#1122aa">b_abs</font></a>(*(<a href="rtwtypes_h.html#type_creal32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_creal32_T');" target="_self"><font color="#1122aa">creal32_T</font></a> (*)[131073])&amp;tmp_data[0], fv0);
+<a name="102"><font color="#888888 "><i>  102   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; 131073; i0++) <b>{</b>
+<a name="103"><font color="#888888 "><i>  103   </i></font></a>    b_START_F[i0] = ((START_F &lt; f[i0]) &amp;&amp; (f[i0] &lt; END_F));
+<a name="104"><font color="#888888 "><i>  104   </i></font></a>  <b>}</b>
+<a name="105"><font color="#888888 "><i>  105   </i></font></a>
+<a name="106"><font color="#888888 "><i>  106   </i></font></a>  <a href="Prep_emxutil_c.html#fcn_emxInit_int32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxInit_int32_T');" target="_self"><font color="#1122aa">emxInit_int32_T</font></a>(&amp;r0, 2);
+<a name="107"><font color="#888888 "><i>  107   </i></font></a>  <a href="#fcn_eml_li_find" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_eml_li_find');" target="_self"><font color="#1122aa">eml_li_find</font></a>(b_START_F, r0);
+<a name="108"><font color="#888888 "><i>  108   </i></font></a>  i0 = prc_data-&gt;size[0] * prc_data-&gt;size[1];
+<a name="109"><font color="#888888 "><i>  109   </i></font></a>  prc_data-&gt;size[0] = 1;
+<a name="110"><font color="#888888 "><i>  110   </i></font></a>  prc_data-&gt;size[1] = r0-&gt;size[1];
+<a name="111"><font color="#888888 "><i>  111   </i></font></a>  <a href="Prep_emxutil_c.html#fcn_emxEnsureCapacity" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxEnsureCapacity');" target="_self"><font color="#1122aa">emxEnsureCapacity</font></a>((<a href="Prep_types_h.html#type_emxArray__common" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_emxArray__common');" target="_self"><font color="#1122aa">emxArray__common</font></a> *)prc_data, i0, (<font color="#112266"><b>int</b></font>)<font color="#112266"><b>sizeof</b></font>(<font color="#112266"><b>float</b></font>));
+<a name="112"><font color="#888888 "><i>  112   </i></font></a>  loop_ub = r0-&gt;size[0] * r0-&gt;size[1];
+<a name="113"><font color="#888888 "><i>  113   </i></font></a>  <font color="#112266"><b>for</b></font> (i0 = 0; i0 &lt; loop_ub; i0++) <b>{</b>
+<a name="114"><font color="#888888 "><i>  114   </i></font></a>    prc_data-&gt;data[i0] = 2.0F * fv0[r0-&gt;data[i0] - 1];
+<a name="115"><font color="#888888 "><i>  115   </i></font></a>  <b>}</b>
+<a name="116"><font color="#888888 "><i>  116   </i></font></a>
+<a name="117"><font color="#888888 "><i>  117   </i></font></a>  <a href="Prep_emxutil_c.html#fcn_emxFree_int32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxFree_int32_T');" target="_self"><font color="#1122aa">emxFree_int32_T</font></a>(&amp;r0);
+<a name="118"><font color="#888888 "><i>  118   </i></font></a><b>}</b>
+<a name="119"><font color="#888888 "><i>  119   </i></font></a>
+<a name="120"><font color="#888888 "><i>  120   </i></font></a><font color="#117755"><i>/* End of code generation (Prep.c) */</i></font>
+<a name="121"><font color="#888888 "><i>  121   </i></font></a></pre>
 </td></tr></table>
 </p>
 </body>

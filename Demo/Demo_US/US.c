@@ -19,7 +19,12 @@
 #define BUFFER_SIZE 192000
 #define SAMPLE_SIZE 192000
 /* ----------------------------------------------------------- */
-#define FILTER_FILE "c_20k_23k_500ms.txt"
+#define FILTER_FILE "c_20k_23k_500ms.txt"  //file name for the chirp
+#define RAW_ENABLE	0	// For capture raw data or not
+// These pars should be consistent with the chirps
+#define FS	192000
+#define START_F	20000
+#define END_F	23000
 
 int main(void)
 {
@@ -27,7 +32,8 @@ int main(void)
 	int i ,j, count=0, size=5000;
 	unsigned int buffer_AIN_2[BUFFER_SIZE] ={0};
 	time_t rawtime;
-	char data_file_name[255];
+	char data_file_name[128];
+	char raw_data_name[128];
 	FILE* data_file;
 	FILE* filter_fd;
 	char fname[] = FILTER_FILE;
@@ -56,11 +62,11 @@ int main(void)
 	 */
 //	const int clk_div = 34 ;
 
-	// ADC sampling settings
+	// ADC sampling settings for 48k
 	//const int clk_div = 25;
 	//const int open_dly = 5;
 	//const int sample_dly = 1;
-	// setting for 192k
+	// For 192k
 	const int clk_div = 5;
 	const int open_dly = 10;
 	const int sample_dly = 1;
@@ -103,12 +109,12 @@ int main(void)
 	}
 	fclose(filter_fd);
 	printf("Filter loaded #%d\n", count);
-	Prep(input, filter, prc_pt);	
+	Prep(input, filter, FS, START_F, END_F, prc_pt);	
 	printf("Preprocessing done\n");
 
 	// format file name
 	snprintf(data_file_name, sizeof(data_file_name), "%s", ctime(&rawtime));	//copy time to string
-	data_file_name[strcspn(data_file_name,"\n")] = 0;							//remove trailing newline
+	data_file_name[strcspn(data_file_name,"\n")] = 0;				//remove trailing newline
 	// convert space to _ in filename
 	char *p = data_file_name;
 	for (i=0; i < strlen(data_file_name); i++){
@@ -116,25 +122,29 @@ int main(void)
 		else if (data_file_name[i] == ' ') data_file_name[i] = '_';
 
 	}
+	strcpy(raw_data_name, data_file_name);
 	strcat(data_file_name,".dat" );
+	strcat(raw_data_name,".raw" );
 	
 	printf("Saving processed sound data to: %s\n",data_file_name);
 	data_file = fopen(data_file_name,"w");	// open file in write mode
-	
 	// add current time value to top of file
 	fprintf(data_file, "%s", ctime(&rawtime));
-
-	// write buffer to file
-	//for(j = 0 ; j < SAMPLE_SIZE ; j++)
-	//	fprintf( data_file, "%u\n", buffer_AIN_2[j] );
-
-	// Write processed data instead, should be 4096 in length
+	// Write processed data, should be 4096 in length
 	for(j = 0 ; j < 4096 ; j++)
 		fprintf( data_file, "%f\n", local_buff[j] );
 		
-
-
 	fclose( data_file );
+
+	// Write raw data if defined
+	if(RAW_ENABLE){
+		FILE* temp_fd = fopen(raw_data_name,"w");	// open file in write mode
+		for(j = 0 ; j < BUFFER_SIZE ; j++){
+			fprintf(temp_fd, "%u\n", buffer_AIN_2[j] );
+		}
+		fclose(temp_fd);
+	}
+
 
 	iolib_free();
 	return 0;

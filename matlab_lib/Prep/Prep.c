@@ -50,27 +50,32 @@ static void eml_li_find(const boolean_T x[131073], emxArray_int32_T *y)
   }
 }
 
-void Prep(const float raw_data[192000], const float m_filter[100000],
-          emxArray_real32_T *prc_data)
+void Prep(const float raw_data[192000], const float m_filter[100000], float FS,
+          float START_F, float END_F, emxArray_real32_T *prc_data)
 {
-  static double f[131073];
+  float y;
+  static double dv0[131073];
+  static float f[131073];
   int i0;
   static creal32_T tmp_data[262144];
   static creal32_T Y_temp[262144];
   static creal32_T b_tmp_data[262144];
   static creal32_T b_Y_temp[262144];
   static float fv0[131073];
-  boolean_T bv0[131073];
+  boolean_T b_START_F[131073];
   emxArray_int32_T *r0;
   int loop_ub;
 
   /*  PREPROCESSING Summary of this function goes here */
   /*  Take the raw data, match filtered it and output in frequency domain */
-  /* coder.inline('never'); */
+  /*  FS = 192000; */
+  /*  START_F = 20000; */
+  /*  END_F = 23000; */
   /*  Next power of 2 from length of y */
-  linspace(f);
+  y = FS / 2.0F;
+  linspace(dv0);
   for (i0 = 0; i0 < 131073; i0++) {
-    f[i0] *= 96000.0;
+    f[i0] = y * (float)dv0[i0];
   }
 
   /*  frequency band */
@@ -95,11 +100,11 @@ void Prep(const float raw_data[192000], const float m_filter[100000],
   bsxfun(b_tmp_data, b_Y_temp, tmp_data);
   b_abs(*(creal32_T (*)[131073])&tmp_data[0], fv0);
   for (i0 = 0; i0 < 131073; i0++) {
-    bv0[i0] = ((20000.0 < f[i0]) && (f[i0] < 23000.0));
+    b_START_F[i0] = ((START_F < f[i0]) && (f[i0] < END_F));
   }
 
   emxInit_int32_T(&r0, 2);
-  eml_li_find(bv0, r0);
+  eml_li_find(b_START_F, r0);
   i0 = prc_data->size[0] * prc_data->size[1];
   prc_data->size[0] = 1;
   prc_data->size[1] = r0->size[1];
