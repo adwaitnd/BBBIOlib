@@ -113,6 +113,7 @@ int main(void)
 	printf("Preprocessing done\n");
 
 	// format file name
+	/*
 	snprintf(data_file_name, sizeof(data_file_name), "%s", ctime(&rawtime));	//copy time to string
 	data_file_name[strcspn(data_file_name,"\n")] = 0;				//remove trailing newline
 	// convert space to _ in filename
@@ -121,7 +122,9 @@ int main(void)
 		if (data_file_name[i] == '\0') break;
 		else if (data_file_name[i] == ' ') data_file_name[i] = '_';
 
-	}
+	}*/
+	
+	strftime(data_file_name, sizeof(data_file_name), "%Y-%m-%d_%H:%M:%S", localtime(&rawtime));
 	strcpy(raw_data_name, data_file_name);
 	strcat(data_file_name,".dat" );
 	strcat(raw_data_name,".raw" );
@@ -129,7 +132,7 @@ int main(void)
 	printf("Saving processed sound data to: %s\n",data_file_name);
 	data_file = fopen(data_file_name,"w");	// open file in write mode
 	// add current time value to top of file
-	fprintf(data_file, "%s", ctime(&rawtime));
+	fprintf(data_file, "%s\n", data_file_name);
 	// Write processed data, should be 4096 in length
 	for(j = 0 ; j < 4096 ; j++)
 		fprintf( data_file, "%f\n", local_buff[j] );
