@@ -19,9 +19,9 @@
 #define BUFFER_SIZE 192000
 #define SAMPLE_SIZE 192000
 /* ----------------------------------------------------------- */
-#define FILTER_FILE "c_20k_23k_500ms.txt"  //file name for the chirp
-#define RAW_ENABLE	0	// For capture raw data or not
-// These parameters should be consistent with the chirps
+#define FILTER_FILE "c_20k_23k_500ms.txt"  // File name of the chirp
+#define RAW_ENABLE	0	// For logging raw data or not
+// These parameters should be consistent with the generated chirp file
 #define FS	192000
 #define START_F	20000
 #define END_F	23000
@@ -123,10 +123,10 @@ int main(void)
 	// add current time value to top of file
 	fprintf(data_file, "%s\n", data_file_name);
 	// Write processed data, should be 4096 in length
-	for(j = 0 ; j < 4096 ; j++)
+	for(j = 0 ; j < 4096 ; j++){
 		fprintf( data_file, "%f\n", local_buff[j] );
-		
-	fclose( data_file );
+	}
+	fclose(data_file);
 
 	// Write raw data if defined
 	if(RAW_ENABLE){
