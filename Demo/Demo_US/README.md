@@ -13,6 +13,15 @@ Simply clone (or download) this repository on your **Beaglebone Black running De
 
 *The Makefiles in the individual application folders are not yet functional.*
 
+For compiling the program simply do
+
+	# make US
+
+This will generate the executable *US.out* in the directory */Demo/Demo_US*. Running the program will give you a log file with the processed received signal, which is named by the execution time and date. To adjust the parameters and enable additional functionalities you can reconfigure the settings in */Demo/Demo_US/US.c*. 
+
+*You might need to re-generate the matlab library using the coder from Matlab if you want to change the chirps used in the application*
+
+
 [Finish this documentation later]
 
 ## Debug

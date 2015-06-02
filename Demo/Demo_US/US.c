@@ -21,7 +21,7 @@
 /* ----------------------------------------------------------- */
 #define FILTER_FILE "c_20k_23k_500ms.txt"  //file name for the chirp
 #define RAW_ENABLE	0	// For capture raw data or not
-// These pars should be consistent with the chirps
+// These parameters should be consistent with the chirps
 #define FS	192000
 #define START_F	20000
 #define END_F	23000
@@ -113,17 +113,6 @@ int main(void)
 	printf("Preprocessing done\n");
 
 	// format file name
-	/*
-	snprintf(data_file_name, sizeof(data_file_name), "%s", ctime(&rawtime));	//copy time to string
-	data_file_name[strcspn(data_file_name,"\n")] = 0;				//remove trailing newline
-	// convert space to _ in filename
-	char *p = data_file_name;
-	for (i=0; i < strlen(data_file_name); i++){
-		if (data_file_name[i] == '\0') break;
-		else if (data_file_name[i] == ' ') data_file_name[i] = '_';
-
-	}*/
-	
 	strftime(data_file_name, sizeof(data_file_name), "%Y-%m-%d_%H:%M:%S", localtime(&rawtime));
 	strcpy(raw_data_name, data_file_name);
 	strcat(data_file_name,".dat" );
