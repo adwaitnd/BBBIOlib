@@ -1,4 +1,4 @@
-#Roseline Audio + Firefly + ALPS for Ultarsonic People Counting
+#Roseline Audio + Firefly + ALPS for Ultrasonic People Counting
 
 ## Use
 This section describes the use of the hardware + software system for people counting applications.
@@ -13,11 +13,11 @@ Simply clone (or download) this repository on your **Beaglebone Black running De
 
 *The Makefiles in the individual application folders are not yet functional.*
 
-To compile the program simply do the following in the repository
+To compile the program simply do the following in the repository directory,
 
 	# make US
 
-This will generate the executable *US.out* in the directory */Demo/Demo_US/*. Simultaneous playback and recording will start once you run the program. Log file with the processed received signal can be found in your local directory after the program ends by its execution time and date. To adjust the parameters and enable additional functionalities, such as keeping the raw data, you can reconfigure the settings in */Demo/Demo_US/US.c*. 
+This will generate the executable *US.out* in the directory */Demo/Demo_US/*. Simultaneous playback and recording will start once you run the program. Log file with the processed received signal can be found in your local directory after the program is finished by its execution time and date, ex. *2015-06-03_11:59:59.dat*. To adjust the parameters and enable additional functionalities, such as keeping the raw data, you can reconfigure the settings in */Demo/Demo_US/US.c*. 
 
 *In the current setting, you might need to regenerate the matlab library and replace it if you want to change the chirp used in the application*
 
