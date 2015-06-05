@@ -20,7 +20,7 @@
 #define SAMPLE_SIZE 192000
 /* ----------------------------------------------------------- */
 #define FILTER_FILE "c_20k_23k_500ms.txt"  // File name of the chirp
-#define RAW_ENABLE	0	// For logging raw data or not
+#define RAW_ENABLE	0	// Keep raw data or not
 // These parameters should be consistent with the generated chirp file
 #define FS	192000
 #define START_F	20000
@@ -51,6 +51,8 @@ int main(void)
 
 	/* BBBIOlib init*/
 	iolib_init();
+	BBBIO_sys_Enable_GPIO(BBBIO_GPIO1);
+	BBBIO_GPIO_set_dir(BBBIO_GPIO1 , 0, BBBIO_GPIO_PIN_17);
 
 	/* using ADC_CALC toolkit to decide the ADC module argument . Example Sample rate : 10000 sample/s
 	 *
@@ -91,6 +93,11 @@ int main(void)
 	printf("Starting capture with rate %d ...\n", SAMPLE_SIZE);
 	// get time
 	time(&rawtime);
+
+	// start playback
+	BBBIO_GPIO_high(BBBIO_GPIO1, BBBIO_GPIO_PIN_17);
+	iolib_delay_ms(10);
+	BBBIO_GPIO_low(BBBIO_GPIO1, BBBIO_GPIO_PIN_17);
 
 	// start capture
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
