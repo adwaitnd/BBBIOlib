@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <termios.h>
 #include "BBBiolib.h"
 #include "rt_nonfinite.h"
 #include "Prep.h"
@@ -38,6 +41,11 @@ int main(void)
 	FILE* filter_fd;
 	char fname[] = FILTER_FILE;
 
+	char UART_PATH[30] = "/dev/ttyO5";
+	char rec_buf[50] = "";
+	int fd;
+	struct termios old, uart_set;	
+	
 	float local_buff[5000] = {0};
 	float input[BUFFER_SIZE] = {0};
 	float filter[100000] = {0};
@@ -94,16 +102,48 @@ int main(void)
 	// get time
 	time(&rawtime);
 
-	// start playback
-	BBBIO_GPIO_high(BBBIO_GPIO1, BBBIO_GPIO_PIN_17);
-	iolib_delay_ms(10);
-	BBBIO_GPIO_low(BBBIO_GPIO1, BBBIO_GPIO_PIN_17);
+	/* Start playback */
+	//Using uart now 
+	fd = open(UART_PATH, O_RDWR | O_NOCTTY);
+	if(fd < 0){
+		printf("Dev port failed to open\n");
+		return 1;
+	}
+	//save current attributes
+	tcgetattr(fd,&old);
+	bzero(&uart_set,sizeof(uart_set)); 
 
-	// start capture
+	uart_set.c_cflag = B115200 | CS8 | CLOCAL | CREAD;
+	uart_set.c_iflag = IGNPAR | ICRNL;
+	uart_set.c_oflag = 0;
+	uart_set.c_lflag = 0;
+	uart_set.c_cc[VTIME] = 0;
+	uart_set.c_cc[VMIN]  = 1;
+
+	//clean the line and set the attributes
+	tcflush(fd,TCIFLUSH);
+	tcsetattr(fd,TCSANOW,&uart_set);
+	// Setup volume 
+	write(fd,"v1",2);
+	usleep(100000);
+	if(read(fd,&rec_buf,sizeof(rec_buf)) > 0)
+	printf("%s", rec_buf);
+	// Fire the chirp!
+	write(fd, "f", 1);
+	//usleep(100000);
+	tcflush(fd,TCIFLUSH);
+	tcsetattr(fd,TCSANOW,&old);
+	close(fd);
+	//BBBIO_GPIO_high(BBBIO_GPIO1, BBBIO_GPIO_PIN_17);
+	//iolib_delay_ms(10);
+	//BBBIO_GPIO_low(BBBIO_GPIO1, BBBIO_GPIO_PIN_17);
+
+
+	/* Start capture */
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
 	BBBIO_ADCTSC_work(SAMPLE_SIZE);
-	
-	// Preprocessing
+	printf("Recording done.\n");
+	/* Preprocessing */
 	// copy and convert to float
 	for(i=0;i<BUFFER_SIZE;i++){
 		input[i] = (float)buffer_AIN_2[i];
