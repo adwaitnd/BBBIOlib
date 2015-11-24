@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Update Time
+ntpdate -b -u pool.ntp.org
 
 # Change cpu governor
 echo "performance" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 
