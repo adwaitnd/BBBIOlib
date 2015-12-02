@@ -21,6 +21,8 @@
 // Collect for 1s with 192k
 #define BUFFER_SIZE 192000
 #define SAMPLE_SIZE 192000
+//#define BUFFER_SIZE 960000
+//#define SAMPLE_SIZE 960000
 /* ----------------------------------------------------------- */
 #define FILTER_FILE "c_20k_23k_500ms.txt"  // File name of the chirp
 #define RAW_ENABLE	0	// Keep raw data or not
@@ -103,7 +105,9 @@ int main(void)
 	time(&rawtime);
 
 	/* Start playback */
-	
+
+
+		
 	//Using uart now 
 	fd = open(UART_PATH, O_RDWR | O_NOCTTY);
 	if(fd < 0){
@@ -138,7 +142,7 @@ int main(void)
 	//BBBIO_GPIO_high(BBBIO_GPIO1, BBBIO_GPIO_PIN_17);
 	//iolib_delay_ms(10);
 	//BBBIO_GPIO_low(BBBIO_GPIO1, BBBIO_GPIO_PIN_17);
-
+	
 	
 	/* Start capture */
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
