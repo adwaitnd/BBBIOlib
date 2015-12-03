@@ -35,15 +35,19 @@ do
   do
 	echo --- Collecting Sample $i ---
 	chrt -f 99 ./US.out
+	DATE=$(date +"%Y-%m-%d_%H:%M:%S")
+	streamer -f jpeg -o $DATE.jpeg	
 	sleep $DELAY
   done
 
-  #dump to server 
-  sshpass -p 'dump1234' scp /home/debian/BBBIOlib/Demo/Demo_US/*.dat dump@sensor.andrew.cmu.edu:~/data
+  DAY=$(date +"%Y-%m-%d")
+  #dump to server
+  sshpass -p 'dump1234' ssh dump@sensor.andrew.cmu.edu "mkdir -p ~/data/$DAY/"
+  sshpass -p 'dump1234' scp /home/debian/BBBIOlib/Demo/Demo_US/*.{dat,jpeg} dump@sensor.andrew.cmu.edu:~/data/$DAY/
   if [ $? -eq 0 ]
   then
     echo "Data dump complete, cleaning up ..."
-    rm /home/debian/BBBIOlib/Demo/Demo_US/*.dat
+    rm /home/debian/BBBIOlib/Demo/Demo_US/*.{dat,jpeg}
   fi
 
   # Take some rest
