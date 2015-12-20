@@ -16,3 +16,12 @@ do
 	sleep 15
 	RES=$(ping 8.8.8.8 -c 1 | egrep 'Unreachable | unreachable' | wc -l)
 done
+
+# Update time 
+echo "Syncing time ... "
+ntpdate -b -u pool.ntp.org
+# Update IP
+echo "Update IP ..."
+date > last_ip.txt
+ifconfig wlan0 | grep inet >> last_ip.txt
+ 

@@ -9,9 +9,9 @@ do
   # Check Wifi setup
   ./setup_wifi.sh
 
-  # Update Time
-  echo "Syncing time ... "
-  ntpdate -b -u pool.ntp.org
+  # Update Timei in wifi setup
+  #echo "Syncing time ... "
+  #ntpdate -b -u pool.ntp.org
 
   # Change cpu governor
   echo "performance" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 
