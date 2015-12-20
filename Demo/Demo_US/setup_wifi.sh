@@ -21,7 +21,8 @@ done
 echo "Syncing time ... "
 ntpdate -b -u pool.ntp.org
 # Update IP
-echo "Update IP ..."
+echo "Updating IP ..."
 date > last_ip.txt
 ifconfig wlan0 | grep inet >> last_ip.txt
- 
+sshpass -p 'dump1234' scp /home/debian/BBBIOlib/Demo/Demo_US/last_ip.txt dump@sensor.andrew.cmu.edu:~/data/
+echo "Wifi update done."
