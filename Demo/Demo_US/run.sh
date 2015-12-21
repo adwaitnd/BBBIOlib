@@ -31,6 +31,10 @@ do
   fi
 
   # Start data collection 
+
+  ## Warm up the transformer
+  chrt -f 99 ./US.out 0
+
   for i in {1..5}
   do
 	echo --- Collecting Sample $i ---

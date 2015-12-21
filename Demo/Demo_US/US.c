@@ -31,7 +31,7 @@
 #define START_F	20000
 #define END_F	23000
 
-int main(void)
+int main(int argc, char* argv[])
 {
 	unsigned int sample;
 	int i ,j, count=0, size=5000;
@@ -106,8 +106,6 @@ int main(void)
 
 	/* Start playback */
 
-
-		
 	//Using uart now 
 	fd = open(UART_PATH, O_RDWR | O_NOCTTY);
 	if(fd < 0){
@@ -148,6 +146,12 @@ int main(void)
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
 	BBBIO_ADCTSC_work(SAMPLE_SIZE);
 	printf("Recording done.\n");
+
+	/* If warmup then we are done*/
+	if(argc==2 && atoi(argv[1])==0){
+		return 0;
+	}	 
+
 	/* Preprocessing */
 	// copy and convert to float
 	for(i=0;i<BUFFER_SIZE;i++){

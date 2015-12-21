@@ -1,3 +1,2 @@
-Sun Dec 20 13:16:02 EST 2015
-          inet addr:128.237.172.223  Bcast:128.237.175.255  Mask:255.255.240.0
-          inet6 addr: fe80::2ab2:bdff:fe0b:95b9/64 Scope:Link
+Mon Dec 21 15:36:41 EST 2015
+128.237.236.63
