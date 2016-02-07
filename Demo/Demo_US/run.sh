@@ -34,6 +34,7 @@ do
 
   ## Warm up the transformer
   chrt -f 99 ./US.out 0
+  sleep $DELAY
 
   for i in {1..5}
   do

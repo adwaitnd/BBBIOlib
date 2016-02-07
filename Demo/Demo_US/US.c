@@ -124,22 +124,22 @@ int main(int argc, char* argv[])
 	uart_set.c_cc[VMIN]  = 1;
 
 	//clean the line and set the attributes
+
 	tcflush(fd,TCIFLUSH);
 	tcsetattr(fd,TCSANOW,&uart_set);
 	// Setup volume 9x & gain 2 
 	write(fd,"vZ",2);
-	usleep(300000);
-	if(read(fd,&rec_buf,sizeof(rec_buf)) > 0)
-	printf("%s", rec_buf);
+	usleep(500000);
+	//if(read(fd,&rec_buf,sizeof(rec_buf)) > 0){
+	//	printf("Set complete.\n");
+	//}
+	printf("Fire in the hole!\n");
 	// Fire the chirp!
 	write(fd, "f", 1);
 	usleep(100000);
 	tcflush(fd,TCIFLUSH);
 	tcsetattr(fd,TCSANOW,&old);
 	close(fd);
-	//BBBIO_GPIO_high(BBBIO_GPIO1, BBBIO_GPIO_PIN_17);
-	//iolib_delay_ms(10);
-	//BBBIO_GPIO_low(BBBIO_GPIO1, BBBIO_GPIO_PIN_17);
 	
 	
 	/* Start capture */
