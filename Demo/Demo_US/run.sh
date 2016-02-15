@@ -33,13 +33,14 @@ do
   # Start data collection 
 
   ## Warm up the transformer
-  chrt -f 99 ./US.out 0
+  chrt -f 90 ./US.out 0
   sleep $DELAY
 
   for i in {1..5}
   do
 	echo --- Collecting Sample $i ---
 	chrt -f 99 ./US.out
+	sleep 1
 	DATE=$(date +"%Y-%m-%d_%H:%M:%S")
 	streamer -f jpeg -o $DATE.jpeg	
 	sleep $DELAY
