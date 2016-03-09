@@ -1,4 +1,6 @@
 #!/bin/bash
+#LOCATION=CIC
+LOCATION=$1
 
 route -n | grep 192.168.1.1
 if [ $? -eq 0 ]
@@ -38,5 +40,5 @@ ntpdate -b -u pool.ntp.org
 echo "Updating IP ..."
 date > last_ip.txt
 echo $MY_IP >> last_ip.txt
-sshpass -p 'dump1234' scp /home/debian/BBBIOlib/Demo/Demo_US/last_ip.txt dump@sensor.andrew.cmu.edu:~/data/
+sshpass -p 'dump1234' scp /home/debian/BBBIOlib/Demo/Demo_US/last_ip.txt dump@sensor.andrew.cmu.edu:~/data/$LOCATION/
 echo "Wifi update done."

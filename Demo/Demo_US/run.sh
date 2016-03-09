@@ -2,12 +2,13 @@
 
 PERIOD=600
 DELAY=2
+LOCATION=CIC
 
 while true
 do
 
   # Check Wifi setup
-  ./setup_wifi.sh
+  ./setup_wifi.sh $LOCATION
 
   # Update Timei in wifi setup
   #echo "Syncing time ... "
@@ -48,8 +49,8 @@ do
 
   DAY=$(date +"%Y-%m-%d")
   #dump to server
-  sshpass -p 'dump1234' ssh dump@sensor.andrew.cmu.edu "mkdir -p ~/data/$DAY/"
-  sshpass -p 'dump1234' scp /home/debian/BBBIOlib/Demo/Demo_US/*.{dat,jpeg} dump@sensor.andrew.cmu.edu:~/data/$DAY/
+  sshpass -p 'dump1234' ssh dump@sensor.andrew.cmu.edu "mkdir -p ~/data/$LOCATION/$DAY/"
+  sshpass -p 'dump1234' scp /home/debian/BBBIOlib/Demo/Demo_US/*.{dat,jpeg} dump@sensor.andrew.cmu.edu:~/data/$LOCATION/$DAY/
   if [ $? -eq 0 ]
   then
     echo "Data dump complete, cleaning up ..."
