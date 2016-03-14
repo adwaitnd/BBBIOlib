@@ -2,7 +2,7 @@
 
 PERIOD=600
 DELAY=2
-LOCATION=CIC
+LOCATION=TEST
 
 while true
 do
