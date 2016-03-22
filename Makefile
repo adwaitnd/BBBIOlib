@@ -115,6 +115,7 @@ Sound_Capture_ADC : ${DEMO_PATH}/Demo_ADC/ADC.c ${LIB_PATH}/libBBBio.a
 
 US : ${DEMO_PATH}/Demo_ADC/ADC.c ${LIB_PATH}/libBBBio.a ${MATLAB_PATH}/Prep.a
 	${CC} -o ${DEMO_PATH}/Demo_US/US.out ${DEMO_PATH}/Demo_US/US.c -L ${LIB_PATH} ${MATLAB_PATH}/Prep.a -I ${INCLUDE_PATH} -I ${MATLAB_PATH} -l${LIBRARY} -lm
+	${CC} -o ${DEMO_PATH}/Demo_US/Tone.out ${DEMO_PATH}/Demo_US/Tone.c -L ${LIB_PATH} ${MATLAB_PATH}/Prep.a -I ${INCLUDE_PATH} -I ${MATLAB_PATH} -l${LIBRARY} -lm
 #---------------------------------------------------
 #---------------------------------------------------
 # toolkit 
