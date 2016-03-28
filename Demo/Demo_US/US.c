@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
 	//write(fd,"vZ",2);
 	// Setup volume 85 & gain 2 
 	write(fd,"vU",2);
-	usleep(100000);
+	usleep(500000);
 	//if(read(fd,&rec_buf,sizeof(rec_buf)) > 0){
 	//	printf("Set complete.\n");
 	//}
