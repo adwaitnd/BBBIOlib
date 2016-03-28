@@ -18,13 +18,13 @@
 /* ----------------------------------------------------------- */
 //#define BUFFER_SIZE 48000
 //#define SAMPLE_SIZE 48000
-// Collect for 1s with 192k
-#define BUFFER_SIZE 192000
-#define SAMPLE_SIZE 192000
+// Collect for 0.5s with 192k
+#define BUFFER_SIZE 96000
+#define SAMPLE_SIZE 96000
 //#define BUFFER_SIZE 960000
 //#define SAMPLE_SIZE 960000
 /* ----------------------------------------------------------- */
-#define FILTER_FILE "c_20k_23k_500ms.txt"  // File name of the chirp
+#define FILTER_FILE "c_20k_23k_100ms_192kf.txt"  // File name of the chirp
 #define RAW_ENABLE	0	// Keep raw data or not
 // These parameters should be consistent with the generated chirp file
 #define FS	192000
@@ -131,20 +131,21 @@ int main(int argc, char* argv[])
 	//write(fd,"vZ",2);
 	// Setup volume 85 & gain 2 
 	write(fd,"vU",2);
-	usleep(500000);
+	usleep(100000);
 	//if(read(fd,&rec_buf,sizeof(rec_buf)) > 0){
 	//	printf("Set complete.\n");
 	//}
 	printf("Fire in the hole!\n");
 	// Fire the chirp!
 	write(fd, "f", 1);
-	usleep(100000);
+	usleep(1000);
 	tcflush(fd,TCIFLUSH);
 	tcsetattr(fd,TCSANOW,&old);
 	close(fd);
 	
 	
 	/* Start capture */
+	usleep(100000); // wait for chirp to finish 
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
 	BBBIO_ADCTSC_work(SAMPLE_SIZE);
 	printf("Recording done.\n");

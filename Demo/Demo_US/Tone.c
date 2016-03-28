@@ -138,13 +138,14 @@ int main(int argc, char* argv[])
 	printf("Fire in the hole!\n");
 	// Fire the chirp!
 	write(fd, "t", 1);
-	usleep(10000);
+	usleep(1000);
 	tcflush(fd,TCIFLUSH);
 	tcsetattr(fd,TCSANOW,&old);
 	close(fd);
 	
 	
 	/* Start capture */
+	usleep(30000);
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
 	BBBIO_ADCTSC_work(SAMPLE_SIZE);
 	printf("Recording done.\n");
