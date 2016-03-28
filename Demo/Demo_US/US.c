@@ -24,7 +24,7 @@
 //#define BUFFER_SIZE 960000
 //#define SAMPLE_SIZE 960000
 /* ----------------------------------------------------------- */
-#define FILTER_FILE "c_20k_23k_100ms_192kf.txt"  // File name of the chirp
+#define FILTER_FILE "c_20k_23k_100ms_5fd_192kf.txt"  // File name of the chirp
 #define RAW_ENABLE	0	// Keep raw data or not
 // These parameters should be consistent with the generated chirp file
 #define FS	192000
@@ -163,6 +163,10 @@ int main(int argc, char* argv[])
 	// load filter
 	count=0;
 	filter_fd =fopen(fname, "r");
+	if(filter_fd==NULL){
+		printf("Failed opening filter file\n");
+		return -1;
+	}
 	while(count<100000 && fscanf(filter_fd, "%f\n", &filter[count])!= EOF){
 		count++;
 	}
