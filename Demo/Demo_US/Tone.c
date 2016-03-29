@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 	
 	
 	/* Start capture */
-	usleep(30000);
+	usleep(30000-1000);
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
 	BBBIO_ADCTSC_work(SAMPLE_SIZE);
 	printf("Recording done.\n");

@@ -25,7 +25,7 @@
 //#define SAMPLE_SIZE 960000
 /* ----------------------------------------------------------- */
 #define FILTER_FILE "c_20k_23k_100ms_5fd_192kf.txt"  // File name of the chirp
-#define RAW_ENABLE	0	// Keep raw data or not
+#define RAW_ENABLE	1	// Keep raw data or not
 // These parameters should be consistent with the generated chirp file
 #define FS	192000
 #define START_F	20000
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 	
 	
 	/* Start capture */
-	usleep(100000); // wait for chirp to finish 
+	usleep(100000-1000); // wait for chirp to finish 
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
 	BBBIO_ADCTSC_work(SAMPLE_SIZE);
 	printf("Recording done.\n");

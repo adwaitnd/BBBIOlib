@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PERIOD=60
+PERIOD=300
 DELAY=2
 LOCATION=TEST
 
@@ -41,8 +41,8 @@ do
   do
 	echo --- Collecting Sample $i ---
 	chrt -f 99 ./US.out
-	sleep 1
-	chrt -f 99 ./Tone.out
+	#sleep 1
+	#chrt -f 99 ./Tone.out
 	sleep 0.5
 	DATE=$(date +"%Y-%m-%d_%H:%M:%S")
 	streamer -f jpeg -o $DATE.jpeg	
