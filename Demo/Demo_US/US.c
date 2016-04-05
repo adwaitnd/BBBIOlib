@@ -16,7 +16,7 @@
 #include "linspace.h"
 
 
-#include "Prep_fft.h"
+//#include "Prep_fft.h"
 
 /* ----------------------------------------------------------- */
 //#define BUFFER_SIZE 48000
@@ -152,7 +152,7 @@ int main(int argc, char* argv[])
 	
 	
 	/* Start capture */
-	usleep(30000); // wait for chirp to finish 
+	//usleep(30000); // wait for chirp to finish 
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
 	BBBIO_ADCTSC_work(SAMPLE_SIZE);
 	printf("Recording done.\n");
