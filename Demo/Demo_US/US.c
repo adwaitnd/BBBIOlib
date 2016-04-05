@@ -15,6 +15,9 @@
 #include "fft.h"
 #include "linspace.h"
 
+
+#include "Prep_fft.h"
+
 /* ----------------------------------------------------------- */
 //#define BUFFER_SIZE 48000
 //#define SAMPLE_SIZE 48000
@@ -43,11 +46,13 @@ int main(int argc, char* argv[])
 	FILE* filter_fd;
 	char fname[] = FILTER_FILE;
 
+
 	char UART_PATH[30] = "/dev/ttyO5";
 	char rec_buf[50] = "";
 	int fd;
 	struct termios old, uart_set;	
-	
+
+	int res_size[2] = {0};	
 	float local_buff[5000] = {0};
 	float input[BUFFER_SIZE] = {0};
 	float filter[100000] = {0};
@@ -179,7 +184,8 @@ int main(int argc, char* argv[])
 	}
 	fclose(filter_fd);
 	printf("Filter loaded #%d\n", count);
-	Prep(input, filter, FS, START_F, END_F, prc_pt);	
+	//Prep(input, filter, FS, START_F, END_F, prc_pt);	
+	Prep_fft(input, FS, START_F, END_F, &local_buff, res_size);	
 	printf("Preprocessing done\n");
 	*/
 
