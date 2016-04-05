@@ -18,9 +18,9 @@
 /* ----------------------------------------------------------- */
 //#define BUFFER_SIZE 48000
 //#define SAMPLE_SIZE 48000
-// Collect for 0.5s with 192k
-#define BUFFER_SIZE 96000
-#define SAMPLE_SIZE 96000
+// Collect for 0.3s with 192k
+#define BUFFER_SIZE 57600
+#define SAMPLE_SIZE 57600
 //#define BUFFER_SIZE 960000
 //#define SAMPLE_SIZE 960000
 /* ----------------------------------------------------------- */
@@ -131,6 +131,8 @@ int main(int argc, char* argv[])
 	//write(fd,"vZ",2);
 	// Setup volume 85 & gain 2 
 	write(fd,"vU",2);
+	// Setup volume 85 & gain 2 
+	//write(fd,"va",2);
 	usleep(500000);
 	//if(read(fd,&rec_buf,sizeof(rec_buf)) > 0){
 	//	printf("Set complete.\n");
@@ -145,7 +147,7 @@ int main(int argc, char* argv[])
 	
 	
 	/* Start capture */
-	usleep(100000-1000); // wait for chirp to finish 
+	usleep(30000); // wait for chirp to finish 
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
 	BBBIO_ADCTSC_work(SAMPLE_SIZE);
 	printf("Recording done.\n");
@@ -160,7 +162,12 @@ int main(int argc, char* argv[])
 	for(i=0;i<BUFFER_SIZE;i++){
 		input[i] = (float)buffer_AIN_2[i];
 	} 
+	//for(i=0;i<BUFFER_SIZE;i++){
+	//	printf("Get %f\n", input[i]);
+	//}
+ 
 	// load filter
+	/*
 	count=0;
 	filter_fd =fopen(fname, "r");
 	if(filter_fd==NULL){
@@ -174,6 +181,7 @@ int main(int argc, char* argv[])
 	printf("Filter loaded #%d\n", count);
 	Prep(input, filter, FS, START_F, END_F, prc_pt);	
 	printf("Preprocessing done\n");
+	*/
 
 	// format file name
 	strftime(data_file_name, sizeof(data_file_name), "%Y-%m-%d_%H:%M:%S", localtime(&rawtime));
@@ -186,9 +194,9 @@ int main(int argc, char* argv[])
 	// add current time value to top of file
 	fprintf(data_file, "%s\n", data_file_name);
 	// Write processed data, should be 4096 in length
-	for(j = 0 ; j < 4096 ; j++){
-		fprintf( data_file, "%f\n", local_buff[j] );
-	}
+	//for(j = 0 ; j < 2048 ; j++){
+	//	fprintf( data_file, "%f\n", local_buff[j] );
+	//}
 	fclose(data_file);
 
 	// Write raw data if defined
