@@ -24,7 +24,9 @@ then
 	route add default gw 128.237.224.1 
 fi
 
-RES=$(ping 8.8.8.8 -c 1 | egrep 'Unreachable | unreachable' | wc -l)
+RES=$(ping 8.8.8.8 -I wlan0 -c 1 | egrep 'Unreachable|unreachable' | wc -l)
+sleep 3
+echo $RES
 
 while [ $RES -ne 0 ]
 do
@@ -34,7 +36,7 @@ do
 	ifup wlan0
 	sleep 15
 	route add default gw 128.237.224.1 
-	RES=$(ping 8.8.8.8 -c 1 | egrep 'Unreachable | unreachable' | wc -l)
+	RES=$(ping 8.8.8.8 -c 1 | egrep 'Unreachable|unreachable' | wc -l)
 done
 
 # Update time 

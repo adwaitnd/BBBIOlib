@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PERIOD=60
+PERIOD=600
 DELAY=2
 LOCATION=TEST
 
