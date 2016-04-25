@@ -63,7 +63,12 @@ int main(int argc, char* argv[])
 	prc_pt->allocatedSize = size*sizeof(float);
 	prc_pt->numDimensions = 1;
 	prc_pt->canFreeData = false;	
+	int vol = -1
 
+	if(argc==2){
+		vol = atoi(argv[1]);
+		printf("Get vol %d\n", vol);	
+	}
 	/* BBBIOlib init*/
 	iolib_init();
 	BBBIO_sys_Enable_GPIO(BBBIO_GPIO1);
