@@ -63,11 +63,11 @@ int main(int argc, char* argv[])
 	prc_pt->allocatedSize = size*sizeof(float);
 	prc_pt->numDimensions = 1;
 	prc_pt->canFreeData = false;	
-	int vol = -1
-
+	int vol = -1;
+	//default is U(85)
+	char vol_buff[3]="vU";
 	if(argc==2){
 		vol = atoi(argv[1]);
-		printf("Get vol %d\n", vol);	
 	}
 	/* BBBIOlib init*/
 	iolib_init();
@@ -137,12 +137,10 @@ int main(int argc, char* argv[])
 
 	tcflush(fd,TCIFLUSH);
 	tcsetattr(fd,TCSANOW,&uart_set);
-	// Setup volume 9x & gain 2 
-	//write(fd,"vZ",2);
-	// Setup volume 85 & gain 2 
-	write(fd,"vU",2);
-	// Setup volume 85 & gain 2 
-	//write(fd,"va",2);
+	if(vol!=-1){
+		sprintf(vol_buff, "v%c", vol);
+	}
+	write(fd, vol_buff, 2);
 	usleep(500000);
 	//if(read(fd,&rec_buf,sizeof(rec_buf)) > 0){
 	//	printf("Set complete.\n");
@@ -195,7 +193,13 @@ int main(int argc, char* argv[])
 	*/
 
 	// format file name
-	strftime(data_file_name, sizeof(data_file_name), "%Y-%m-%d_%H:%M:%S", localtime(&rawtime));
+	strftime(data_file_name, sizeof(data_file_name), "%Y-%m-%d_%H:%M:%S-", localtime(&rawtime));
+	if(argc==2 && vol!=-1){
+		strcat(data_file_name, argv[1]);
+	}
+	else{
+		strcat(data_file_name, "85");
+	}
 	strcpy(raw_data_name, data_file_name);
 	strcat(data_file_name,".dat" );
 	strcat(raw_data_name,".raw" );
