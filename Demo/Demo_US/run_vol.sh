@@ -43,6 +43,10 @@ do
 	VOL=$((i*10+50))
 	chrt -f 99 ./US.out $VOL
 	sleep 1
+	chrt -f 99 ./US.out $VOL
+	sleep 1
+	chrt -f 99 ./US.out $VOL
+	sleep 1
 	chrt -f 99 ./Tone.out
 	sleep 0.5
 	DATE=$(date +"%Y-%m-%d_%H:%M:%S")
