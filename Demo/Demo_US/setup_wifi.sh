@@ -47,6 +47,6 @@ echo "Updating IP ..."
 date > last_ip.txt
 echo $MY_IP >> last_ip.txt
 echo "Create folder $LOCATION"
-sshpass -p 'dump1234' ssh dump@sensor.andrew.cmu.edu "mkdir -p ~/data/$LOCATION"
-sshpass -p 'dump1234' scp /home/debian/BBBIOlib/Demo/Demo_US/last_ip.txt dump@sensor.andrew.cmu.edu:~/data/$LOCATION/
+sshpass -p 'trash5566' ssh dump@sensor.andrew.cmu.edu "mkdir -p ~/data/$LOCATION"
+sshpass -p 'trash5566' scp /home/debian/BBBIOlib/Demo/Demo_US/last_ip.txt dump@sensor.andrew.cmu.edu:~/data/$LOCATION/
 echo "Wifi update done."
