@@ -56,8 +56,8 @@ do
 
   DAY=$(date +"%Y-%m-%d")
   #dump to server
-  sshpass -p 'dump1234' ssh dump@sensor.andrew.cmu.edu "mkdir -p ~/data/$LOCATION/$DAY/"
-  sshpass -p 'dump1234' scp /home/debian/BBBIOlib/Demo/Demo_US/*.{dat,jpeg,raw} dump@sensor.andrew.cmu.edu:~/data/$LOCATION/$DAY/
+  sshpass -p 'trash5566' ssh dump@sensor.andrew.cmu.edu "mkdir -p ~/data/$LOCATION/$DAY/"
+  sshpass -p 'trash5566' scp /home/debian/BBBIOlib/Demo/Demo_US/*.{dat,jpeg,raw} dump@sensor.andrew.cmu.edu:~/data/$LOCATION/$DAY/
   if [ $? -eq 0 ]
   then
     echo "Data dump complete, cleaning up ..."
