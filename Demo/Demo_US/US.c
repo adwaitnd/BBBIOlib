@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
 	FILE* data_file;
 	FILE* filter_fd;
 	char fname[] = FILTER_FILE;
-
+	time_t start_t, end_t;
 
 	char UART_PATH[30] = "/dev/ttyO5";
 	char rec_buf[50] = "";
@@ -148,6 +148,7 @@ int main(int argc, char* argv[])
 	printf("Fire in the hole!\n");
 	// Fire the chirp!
 	write(fd, "f", 1);
+	time(&start_t);
 	usleep(1000);
 	tcflush(fd,TCIFLUSH);
 	tcsetattr(fd,TCSANOW,&old);
@@ -156,10 +157,11 @@ int main(int argc, char* argv[])
 	
 	/* Start capture */
 	//usleep(30000); // wait for chirp to finish 
+	time(&start_t);
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
 	BBBIO_ADCTSC_work(SAMPLE_SIZE);
 	printf("Recording done.\n");
-
+	printf("Time diff = %f\n", difftime(end_t, start_t));
 	/* If warmup then we are done*/
 	if(argc==2 && atoi(argv[1])==0){
 		return 0;

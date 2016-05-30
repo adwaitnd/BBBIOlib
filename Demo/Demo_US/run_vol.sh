@@ -1,8 +1,8 @@
 #!/bin/bash
 
-PERIOD=600
+PERIOD=60
 DELAY=2
-LOCATION=TEST
+LOCATION=CIC2201
 
 while true
 do
@@ -41,10 +41,6 @@ do
   do
 	echo --- Collecting Sample $i ---
 	VOL=$((i*10+50))
-	chrt -f 99 ./US.out $VOL
-	sleep 1
-	chrt -f 99 ./US.out $VOL
-	sleep 1
 	chrt -f 99 ./US.out $VOL
 	sleep 1
 	chrt -f 99 ./Tone.out

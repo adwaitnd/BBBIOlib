@@ -1,8 +1,8 @@
 #!/bin/bash
 
-PERIOD=600
+PERIOD=30
 DELAY=2
-LOCATION=TEST
+LOCATION=GATES
 
 while true
 do
@@ -40,7 +40,7 @@ do
   for i in {1..5}
   do
 	echo --- Collecting Sample $i ---
-	chrt -f 99 ./US.out
+	chrt -f 99 ./US.out 100
 	sleep 1
 	chrt -f 99 ./Tone.out
 	sleep 0.5
