@@ -1,12 +1,12 @@
 /*
- * fft.h
+ * abs.h
  *
- * Code generation for function 'fft'
+ * Code generation for function 'abs'
  *
  */
 
-#ifndef __FFT_H__
-#define __FFT_H__
+#ifndef __ABS_H__
+#define __ABS_H__
 
 /* Include files */
 #include <math.h>
@@ -18,8 +18,8 @@
 #include "Prep_fft_types.h"
 
 /* Function Declarations */
-extern void fft(const float x[57600], creal32_T y[65536]);
+extern void b_abs(const creal32_T x[32769], float y[32769]);
 
 #endif
 
-/* End of code generation (fft.h) */
+/* End of code generation (abs.h) */

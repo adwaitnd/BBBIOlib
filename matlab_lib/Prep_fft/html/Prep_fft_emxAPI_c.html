@@ -28,7 +28,7 @@
 <a name="17"><font color="#888888 "><i>   17   </i></font></a>  <a href="Prep_fft_types_h.html#type_emxArray_real32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_emxArray_real32_T');" target="_self"><font color="#1122aa">emxArray_real32_T</font></a> *emx;
 <a name="18"><font color="#888888 "><i>   18   </i></font></a>  <font color="#112266"><b>int</b></font> numEl;
 <a name="19"><font color="#888888 "><i>   19   </i></font></a>  <font color="#112266"><b>int</b></font> i;
-<a name="20"><font color="#888888 "><i>   20   </i></font></a>  <a href="Prep_fft_emxutil_c.html#fcn_b_emxInit_real32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_b_emxInit_real32_T');" target="_self"><font color="#1122aa">b_emxInit_real32_T</font></a>(&amp;emx, numDimensions);
+<a name="20"><font color="#888888 "><i>   20   </i></font></a>  <a href="Prep_fft_emxutil_c.html#fcn_emxInit_real32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxInit_real32_T');" target="_self"><font color="#1122aa">emxInit_real32_T</font></a>(&amp;emx, numDimensions);
 <a name="21"><font color="#888888 "><i>   21   </i></font></a>  numEl = 1;
 <a name="22"><font color="#888888 "><i>   22   </i></font></a>  <font color="#112266"><b>for</b></font> (i = 0; i &lt; numDimensions; i++) <b>{</b>
 <a name="23"><font color="#888888 "><i>   23   </i></font></a>    numEl *= size[i];
@@ -47,7 +47,7 @@
 <a name="36"><font color="#888888 "><i>   36   </i></font></a>  <a href="Prep_fft_types_h.html#type_emxArray_real32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'type_emxArray_real32_T');" target="_self"><font color="#1122aa">emxArray_real32_T</font></a> *emx;
 <a name="37"><font color="#888888 "><i>   37   </i></font></a>  <font color="#112266"><b>int</b></font> numEl;
 <a name="38"><font color="#888888 "><i>   38   </i></font></a>  <font color="#112266"><b>int</b></font> i;
-<a name="39"><font color="#888888 "><i>   39   </i></font></a>  <a href="Prep_fft_emxutil_c.html#fcn_b_emxInit_real32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_b_emxInit_real32_T');" target="_self"><font color="#1122aa">b_emxInit_real32_T</font></a>(&amp;emx, numDimensions);
+<a name="39"><font color="#888888 "><i>   39   </i></font></a>  <a href="Prep_fft_emxutil_c.html#fcn_emxInit_real32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxInit_real32_T');" target="_self"><font color="#1122aa">emxInit_real32_T</font></a>(&amp;emx, numDimensions);
 <a name="40"><font color="#888888 "><i>   40   </i></font></a>  numEl = 1;
 <a name="41"><font color="#888888 "><i>   41   </i></font></a>  <font color="#112266"><b>for</b></font> (i = 0; i &lt; numDimensions; i++) <b>{</b>
 <a name="42"><font color="#888888 "><i>   42   </i></font></a>    numEl *= size[i];
@@ -69,7 +69,7 @@
 <a name="58"><font color="#888888 "><i>   58   </i></font></a>  <font color="#112266"><b>int</b></font> i;
 <a name="59"><font color="#888888 "><i>   59   </i></font></a>  size[0] = rows;
 <a name="60"><font color="#888888 "><i>   60   </i></font></a>  size[1] = cols;
-<a name="61"><font color="#888888 "><i>   61   </i></font></a>  <a href="Prep_fft_emxutil_c.html#fcn_b_emxInit_real32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_b_emxInit_real32_T');" target="_self"><font color="#1122aa">b_emxInit_real32_T</font></a>(&amp;emx, 2);
+<a name="61"><font color="#888888 "><i>   61   </i></font></a>  <a href="Prep_fft_emxutil_c.html#fcn_emxInit_real32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxInit_real32_T');" target="_self"><font color="#1122aa">emxInit_real32_T</font></a>(&amp;emx, 2);
 <a name="62"><font color="#888888 "><i>   62   </i></font></a>  numEl = 1;
 <a name="63"><font color="#888888 "><i>   63   </i></font></a>  <font color="#112266"><b>for</b></font> (i = 0; i &lt; 2; i++) <b>{</b>
 <a name="64"><font color="#888888 "><i>   64   </i></font></a>    numEl *= size[i];
@@ -91,7 +91,7 @@
 <a name="80"><font color="#888888 "><i>   80   </i></font></a>  <font color="#112266"><b>int</b></font> i;
 <a name="81"><font color="#888888 "><i>   81   </i></font></a>  size[0] = rows;
 <a name="82"><font color="#888888 "><i>   82   </i></font></a>  size[1] = cols;
-<a name="83"><font color="#888888 "><i>   83   </i></font></a>  <a href="Prep_fft_emxutil_c.html#fcn_b_emxInit_real32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_b_emxInit_real32_T');" target="_self"><font color="#1122aa">b_emxInit_real32_T</font></a>(&amp;emx, 2);
+<a name="83"><font color="#888888 "><i>   83   </i></font></a>  <a href="Prep_fft_emxutil_c.html#fcn_emxInit_real32_T" onclick="if (top) if (top.docHiliteMe) top.docHiliteMe(window, 'fcn_emxInit_real32_T');" target="_self"><font color="#1122aa">emxInit_real32_T</font></a>(&amp;emx, 2);
 <a name="84"><font color="#888888 "><i>   84   </i></font></a>  numEl = 1;
 <a name="85"><font color="#888888 "><i>   85   </i></font></a>  <font color="#112266"><b>for</b></font> (i = 0; i &lt; 2; i++) <b>{</b>
 <a name="86"><font color="#888888 "><i>   86   </i></font></a>    numEl *= size[i];

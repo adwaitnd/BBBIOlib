@@ -1,12 +1,12 @@
 /*
- * fft.h
+ * linspace.h
  *
- * Code generation for function 'fft'
+ * Code generation for function 'linspace'
  *
  */
 
-#ifndef __FFT_H__
-#define __FFT_H__
+#ifndef __LINSPACE_H__
+#define __LINSPACE_H__
 
 /* Include files */
 #include <math.h>
@@ -18,8 +18,8 @@
 #include "Prep_fft_types.h"
 
 /* Function Declarations */
-extern void fft(const float x[57600], creal32_T y[65536]);
+extern void linspace(double y[32769]);
 
 #endif
 
-/* End of code generation (fft.h) */
+/* End of code generation (linspace.h) */

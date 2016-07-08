@@ -2,7 +2,7 @@
 ## Makefile generated for MATLAB file/project 'Prep_fft'. 
 ## 
 ## Makefile     : Prep_fft_rtw.mk
-## Generated on : Fri Jul 08 13:48:54 2016
+## Generated on : Fri Jul 08 16:16:23 2016
 ## MATLAB Coder version: 2.7 (R2014b)
 ## 
 ## Build Info:
@@ -189,7 +189,7 @@ DEFINES = $(DEFINES_STANDARD)
 ## SOURCE FILES
 ###########################################################################
 
-SRCS = $(START_DIR)/codegen/lib/Prep_fft/Prep_fft_initialize.c $(START_DIR)/codegen/lib/Prep_fft/Prep_fft_terminate.c $(START_DIR)/codegen/lib/Prep_fft/Prep_fft.c $(START_DIR)/codegen/lib/Prep_fft/fft.c $(START_DIR)/codegen/lib/Prep_fft/Prep_fft_emxutil.c $(START_DIR)/codegen/lib/Prep_fft/Prep_fft_emxAPI.c $(START_DIR)/codegen/lib/Prep_fft/rt_nonfinite.c $(START_DIR)/codegen/lib/Prep_fft/rtGetNaN.c $(START_DIR)/codegen/lib/Prep_fft/rtGetInf.c
+SRCS = $(START_DIR)/codegen/lib/Prep_fft/Prep_fft_initialize.c $(START_DIR)/codegen/lib/Prep_fft/Prep_fft_terminate.c $(START_DIR)/codegen/lib/Prep_fft/Prep_fft.c $(START_DIR)/codegen/lib/Prep_fft/abs.c $(START_DIR)/codegen/lib/Prep_fft/linspace.c $(START_DIR)/codegen/lib/Prep_fft/fft.c $(START_DIR)/codegen/lib/Prep_fft/Prep_fft_emxutil.c $(START_DIR)/codegen/lib/Prep_fft/Prep_fft_emxAPI.c $(START_DIR)/codegen/lib/Prep_fft/rt_nonfinite.c $(START_DIR)/codegen/lib/Prep_fft/rtGetNaN.c $(START_DIR)/codegen/lib/Prep_fft/rtGetInf.c
 
 ALL_SRCS = $(SRCS)
 
@@ -197,7 +197,7 @@ ALL_SRCS = $(SRCS)
 ## OBJECTS
 ###########################################################################
 
-OBJS = Prep_fft_initialize.o Prep_fft_terminate.o Prep_fft.o fft.o Prep_fft_emxutil.o Prep_fft_emxAPI.o rt_nonfinite.o rtGetNaN.o rtGetInf.o
+OBJS = Prep_fft_initialize.o Prep_fft_terminate.o Prep_fft.o abs.o linspace.o fft.o Prep_fft_emxutil.o Prep_fft_emxAPI.o rt_nonfinite.o rtGetNaN.o rtGetInf.o
 
 ALL_OBJS = $(OBJS)
 
