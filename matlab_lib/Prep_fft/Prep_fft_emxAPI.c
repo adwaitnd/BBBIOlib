@@ -17,7 +17,7 @@ emxArray_real32_T *emxCreateND_real32_T(int numDimensions, int *size)
   emxArray_real32_T *emx;
   int numEl;
   int i;
-  emxInit_real32_T(&emx, numDimensions);
+  b_emxInit_real32_T(&emx, numDimensions);
   numEl = 1;
   for (i = 0; i < numDimensions; i++) {
     numEl *= size[i];
@@ -36,7 +36,7 @@ emxArray_real32_T *emxCreateWrapperND_real32_T(float *data, int numDimensions,
   emxArray_real32_T *emx;
   int numEl;
   int i;
-  emxInit_real32_T(&emx, numDimensions);
+  b_emxInit_real32_T(&emx, numDimensions);
   numEl = 1;
   for (i = 0; i < numDimensions; i++) {
     numEl *= size[i];
@@ -58,7 +58,7 @@ emxArray_real32_T *emxCreateWrapper_real32_T(float *data, int rows, int cols)
   int i;
   size[0] = rows;
   size[1] = cols;
-  emxInit_real32_T(&emx, 2);
+  b_emxInit_real32_T(&emx, 2);
   numEl = 1;
   for (i = 0; i < 2; i++) {
     numEl *= size[i];
@@ -80,7 +80,7 @@ emxArray_real32_T *emxCreate_real32_T(int rows, int cols)
   int i;
   size[0] = rows;
   size[1] = cols;
-  emxInit_real32_T(&emx, 2);
+  b_emxInit_real32_T(&emx, 2);
   numEl = 1;
   for (i = 0; i < 2; i++) {
     numEl *= size[i];

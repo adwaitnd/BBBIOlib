@@ -38,7 +38,7 @@ extern void Prep_fft_initialize(emlrtContext *aContext);
 extern void Prep_fft_terminate(void);
 extern void Prep_fft_atexit(void);
 extern void Prep_fft_api(const mxArray *prhs[4], const mxArray *plhs[1]);
-extern void Prep_fft(real32_T raw_data[57600], real32_T FS, real32_T START_F, real32_T END_F, emxArray_real32_T *prc_data);
+extern void Prep_fft(emxArray_real32_T *raw_data, real32_T FS, real32_T START_F, real32_T END_F, emxArray_real32_T *prc_data);
 extern void Prep_fft_xil_terminate(void);
 
 #endif

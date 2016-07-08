@@ -18,7 +18,8 @@
 #include "Prep_fft_types.h"
 
 /* Function Declarations */
-extern void fft(const float x[57600], creal32_T y[65536]);
+extern void fft(const emxArray_real32_T *x, double varargin_1,
+                emxArray_creal32_T *y);
 
 #endif
 
