@@ -35,6 +35,7 @@
 #define FS	192000
 #define START_F	20000
 #define END_F	23000
+#define EX_BAND 200
 #define WLEN	CLEN*FS
 
 
@@ -56,7 +57,7 @@ int main(int argc, char* argv[])
 	int fd;
 	struct termios old, uart_set;	
 
-	int res_size[2] = {0};	
+	//int res_size[2] = {0};	
 	float local_buff[5000] = {0};
 	float input[BUFFER_SIZE] = {0};
 	//float filter[100000] = {0};
@@ -67,6 +68,13 @@ int main(int argc, char* argv[])
 	prc_pt->allocatedSize = size*sizeof(float);
 	prc_pt->numDimensions = 1;
 	prc_pt->canFreeData = false;	
+	struct emxArray_real32_T input_data;	
+	struct emxArray_real32_T* input_pt = &input_data;
+	input_pt->data = (float*)&input;
+	input_pt->size = &size;
+	input_pt->allocatedSize = size*sizeof(float);
+	input_pt->numDimensions = 1;
+	input_pt->canFreeData = false;	
 	int vol = -1;
 	//default is U(85)
 	char vol_buff[3]="vU";
@@ -195,6 +203,8 @@ int main(int argc, char* argv[])
 	Prep_fft(input, FS, START_F, END_F, &local_buff, res_size);	
 	printf("Preprocessing done\n");
 	*/
+	Prep_fft(input_pt, FS, START_F-EX_BAND/2, END_F+EX_BAND/2, prc_pt);	
+	printf("Preprocessing done\n");
 
 	/*LOAD MODEL*/
 
