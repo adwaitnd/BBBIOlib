@@ -34,14 +34,15 @@
 #define START_F	20000
 #define END_F	21000
 #define EX_BAND 200
-#define PRC_SIZE 1000 // Should be larger than the data size after FFT
+#define PRC_SIZE 500 // Should be larger than the data size after FFT
+#define PRC_WSIZE 51 // Should be larger segmented fft size
 #define WLEN	CLEN*FS
-
+#define WNUM	4
 
 int main(int argc, char* argv[])
 {
 	unsigned int sample;
-	int i, j, count=0, local_size=PRC_SIZE, raw_size = BUFFER_SIZE;
+	int i, j, count=0, local_size=PRC_SIZE, raw_size = BUFFER_SIZE, wsize = WLEN;
 	unsigned int buffer_AIN_2[BUFFER_SIZE] ={0};
 	time_t rawtime;
 	char data_file_name[128];
@@ -59,7 +60,8 @@ int main(int argc, char* argv[])
 	struct termios old, uart_set;	
 
 	//int res_size[2] = {0};	
-	float local_buff[PRC_SIZE] = {0}; //410
+	float local_buff[PRC_SIZE] = {0};
+	float output_buff[PRC_SIZE] = {0};
 	float input[BUFFER_SIZE] = {0};
 	//float filter[100000] = {0};
 	struct emxArray_real32_T prc_data;	
@@ -131,10 +133,8 @@ int main(int argc, char* argv[])
 	printf("Starting capture with rate %d ...\n", SAMPLE_SIZE);
 	// get time
 	time(&rawtime);
-
 	/* Start playback */
-
-	//Using uart now 
+	//Open uart
 	fd = open(UART_PATH, O_RDWR | O_NOCTTY);
 	if(fd < 0){
 		printf("Dev port failed to open\n");
@@ -191,25 +191,20 @@ int main(int argc, char* argv[])
 	//for(i=0;i<BUFFER_SIZE;i++){
 	//	printf("Get %f\n", input[i]);
 	//}
- 
-	/* load filter */
-	/*
-	count=0;
-	filter_fd =fopen(fname, "r");
-	if(filter_fd==NULL){
-		printf("Failed opening filter file\n");
-		return -1;
+	/* FFT the segmented raw data based on window size*/
+	input_pt->size = &wsize;
+	input_pt->allocatedSize = wsize * sizeof(float);
+	input_pt->numDimensions = 1;
+	input_pt->canFreeData = false;	
+	for(i=0;i<WNUM;i++){
+		input_pt->data = (float*)&(input[i*wsize]);
+		Prep_fft(input_pt, FS, START_F-(EX_BAND/2), END_F+(EX_BAND/2), prc_pt);
+		for(j=0;j<PRC_WSIZE;j++){
+			output_buff[j+i*PRC_WSIZE] = local_buff[j];
+			//printf("output[%d] = %f\n", j+i*PRC_WSIZE, output_buff[j+i*PRC_WSIZE]);
+		}
 	}
-	while(count<100000 && fscanf(filter_fd, "%f\n", &filter[count])!= EOF){
-		count++;
-	}
-	fclose(filter_fd);
-	printf("Filter loaded #%d\n", count);
-	//Prep(input, filter, FS, START_F, END_F, prc_pt);	
-	Prep_fft(input, FS, START_F, END_F, &local_buff, res_size);	
-	printf("Preprocessing done\n");
-	*/
-	Prep_fft(input_pt, FS, START_F-(EX_BAND/2), END_F+(EX_BAND/2), prc_pt);	
+	//Prep_fft(input_pt, FS, START_F-(EX_BAND/2), END_F+(EX_BAND/2), prc_pt);	
 	printf("Preprocessing done\n");
 
 	/*LOAD MODEL*/
@@ -228,11 +223,14 @@ int main(int argc, char* argv[])
 	
 	printf("Saving processed sound data to: %s\n",data_file_name);
 	data_file = fopen(data_file_name,"w");	// open file in write mode
-	// add current time value to top of file
-	fprintf(data_file, "%s\n", data_file_name);
+	/* add current time value to top of file */
+	// fprintf(data_file, "%s\n", data_file_name);
+	/* add label*/
+	fprintf(data_file, "%d\n", label);
+	
 	// Write processed data, should be 410 in length for 57600 points
-	for(j = 0 ; j < 410 ; j++){
-		fprintf( data_file, "%f\n", local_buff[j] );
+	for(j = 0 ; j < 204 ; j++){
+		fprintf( data_file, "%f\n", output_buff[j] );
 	}
 	fclose(data_file);
 
