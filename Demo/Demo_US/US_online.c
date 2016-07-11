@@ -32,15 +32,16 @@
 // These parameters should be consistent with the generated chirp file
 #define FS	192000
 #define START_F	20000
-#define END_F	23000
+#define END_F	21000
 #define EX_BAND 200
+#define PRC_SIZE 1000 // Should be larger than the data size after FFT
 #define WLEN	CLEN*FS
 
 
 int main(int argc, char* argv[])
 {
 	unsigned int sample;
-	int i, j, count=0, size=5000;
+	int i, j, count=0, local_size=PRC_SIZE, raw_size = BUFFER_SIZE;
 	unsigned int buffer_AIN_2[BUFFER_SIZE] ={0};
 	time_t rawtime;
 	char data_file_name[128];
@@ -56,21 +57,21 @@ int main(int argc, char* argv[])
 	struct termios old, uart_set;	
 
 	//int res_size[2] = {0};	
-	float local_buff[5000] = {0};
+	float local_buff[PRC_SIZE] = {0}; //410
 	float input[BUFFER_SIZE] = {0};
 	//float filter[100000] = {0};
 	struct emxArray_real32_T prc_data;	
 	struct emxArray_real32_T* prc_pt = &prc_data;
 	prc_pt->data = (float*)&local_buff;
-	prc_pt->size = &size;
-	prc_pt->allocatedSize = size*sizeof(float);
+	prc_pt->size = &local_size;
+	prc_pt->allocatedSize = local_size * sizeof(float);
 	prc_pt->numDimensions = 1;
 	prc_pt->canFreeData = false;	
 	struct emxArray_real32_T input_data;	
 	struct emxArray_real32_T* input_pt = &input_data;
 	input_pt->data = (float*)&input;
-	input_pt->size = &size;
-	input_pt->allocatedSize = size*sizeof(float);
+	input_pt->size = &raw_size;
+	input_pt->allocatedSize = raw_size * sizeof(float);
 	input_pt->numDimensions = 1;
 	input_pt->canFreeData = false;	
 	int vol = -1;
@@ -201,7 +202,7 @@ int main(int argc, char* argv[])
 	Prep_fft(input, FS, START_F, END_F, &local_buff, res_size);	
 	printf("Preprocessing done\n");
 	*/
-	Prep_fft(input_pt, FS, START_F-EX_BAND/2, END_F+EX_BAND/2, prc_pt);	
+	Prep_fft(input_pt, FS, START_F-(EX_BAND/2), END_F+(EX_BAND/2), prc_pt);	
 	printf("Preprocessing done\n");
 
 	/*LOAD MODEL*/
@@ -222,10 +223,10 @@ int main(int argc, char* argv[])
 	data_file = fopen(data_file_name,"w");	// open file in write mode
 	// add current time value to top of file
 	fprintf(data_file, "%s\n", data_file_name);
-	// Write processed data, should be 4096 in length
-	//for(j = 0 ; j < 2048 ; j++){
-	//	fprintf( data_file, "%f\n", local_buff[j] );
-	//}
+	// Write processed data, should be 410 in length for 57600 points
+	for(j = 0 ; j < 410 ; j++){
+		fprintf( data_file, "%f\n", local_buff[j] );
+	}
 	fclose(data_file);
 
 	// Write raw data if defined
