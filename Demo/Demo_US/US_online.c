@@ -8,12 +8,8 @@
 #include <termios.h>
 #include "BBBiolib.h"
 #include "rt_nonfinite.h"
-//#include "Prep.h"
 #include "Prep_fft_emxutil.h"
-//#include "abs.h"
-//#include "bsxfun.h"
 #include "fft.h"
-//#include "linspace.h"
 #include "Prep_fft.h"
 
 /* ----------------------------------------------------------- */
@@ -33,11 +29,11 @@
 #define FS	192000
 #define START_F	20000
 #define END_F	21000
-#define EX_BAND 200
+#define EX_BAND 200 //Extra bandwidth when filtering
 #define PRC_SIZE 500 // Should be larger than the data size after FFT
 #define PRC_WSIZE 51 // Should be larger segmented fft size
-#define WLEN	CLEN*FS
-#define WNUM	4
+#define WLEN	CLEN*FS // Window sizes when doing FFT
+#define WNUM	4 //Number of windows for gen training features
 
 int main(int argc, char* argv[])
 {
@@ -49,21 +45,15 @@ int main(int argc, char* argv[])
 	char raw_data_name[128];
 	FILE* data_file;
 	FILE* filter_fd;
-	//char fname[] = FILTER_FILE;
-
-
 	char UART_PATH[30] = "/dev/ttyO5";
 	char rec_buf[50] = "";
 	int fd;
 	int vol = -1;
 	int label = -1;
 	struct termios old, uart_set;	
-
-	//int res_size[2] = {0};	
 	float local_buff[PRC_SIZE] = {0};
 	float output_buff[PRC_SIZE] = {0};
 	float input[BUFFER_SIZE] = {0};
-	//float filter[100000] = {0};
 	struct emxArray_real32_T prc_data;	
 	struct emxArray_real32_T* prc_pt = &prc_data;
 	prc_pt->data = (float*)&local_buff;
@@ -73,12 +63,13 @@ int main(int argc, char* argv[])
 	prc_pt->canFreeData = false;	
 	struct emxArray_real32_T input_data;	
 	struct emxArray_real32_T* input_pt = &input_data;
-	input_pt->data = (float*)&input;
-	input_pt->size = &raw_size;
-	input_pt->allocatedSize = raw_size * sizeof(float);
-	input_pt->numDimensions = 1;
-	input_pt->canFreeData = false;	
-	//default is U(85)
+	//input_pt->data = (float*)&input;
+	//input_pt->size = &raw_size;
+	//input_pt->allocatedSize = raw_size * sizeof(float);
+	//input_pt->numDimensions = 1;
+	//input_pt->canFreeData = false;	
+
+	//default volume is(85)
 	char vol_buff[3]="vU";
 	if(argc>=2){
 		vol = atoi(argv[1]);
@@ -210,7 +201,7 @@ int main(int argc, char* argv[])
 	/*LOAD MODEL*/
 
 	// format file name
-	strftime(data_file_name, sizeof(data_file_name), "%Y-%m-%d_%H:%M:%S-", localtime(&rawtime));
+	strftime(data_file_name, sizeof(data_file_name), "data/%Y-%m-%d_%H:%M:%S-", localtime(&rawtime));
 	if(argc==2 && vol!=-1){
 		strcat(data_file_name, argv[1]);
 	}
