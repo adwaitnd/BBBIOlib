@@ -54,6 +54,8 @@ int main(int argc, char* argv[])
 	char UART_PATH[30] = "/dev/ttyO5";
 	char rec_buf[50] = "";
 	int fd;
+	int vol = -1;
+	int label = -1;
 	struct termios old, uart_set;	
 
 	//int res_size[2] = {0};	
@@ -74,11 +76,16 @@ int main(int argc, char* argv[])
 	input_pt->allocatedSize = raw_size * sizeof(float);
 	input_pt->numDimensions = 1;
 	input_pt->canFreeData = false;	
-	int vol = -1;
 	//default is U(85)
 	char vol_buff[3]="vU";
-	if(argc==2){
+	if(argc>=2){
 		vol = atoi(argv[1]);
+		if(argc==3){
+			label = atoi(argv[2]);
+		}
+	}
+	else{
+		printf("Usage:./US_online [volume*] [label]\n");
 	}
 	/* BBBIOlib init*/
 	iolib_init();
@@ -172,7 +179,7 @@ int main(int argc, char* argv[])
 	printf("Recording done.\n");
 
 	/* If warmup then we are done*/
-	if(argc==2 && atoi(argv[1])==0){
+	if(argc>=2 && atoi(argv[1])==0){
 		return 0;
 	}	 
 
