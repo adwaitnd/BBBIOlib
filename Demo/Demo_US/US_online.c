@@ -47,9 +47,11 @@ int main(int argc, char* argv[])
 	FILE* filter_fd;
 	char UART_PATH[30] = "/dev/ttyO5";
 	char rec_buf[50] = "";
+	char MODEL_PATH[30] = "";
 	int fd;
 	int vol = -1;
 	int label = -1;
+	int res = 0;
 	struct termios old, uart_set;	
 	float local_buff[PRC_SIZE] = {0};
 	float output_buff[PRC_SIZE] = {0};
@@ -198,8 +200,7 @@ int main(int argc, char* argv[])
 	//Prep_fft(input_pt, FS, START_F-(EX_BAND/2), END_F+(EX_BAND/2), prc_pt);	
 	printf("Preprocessing done\n");
 
-	/*LOAD MODEL*/
-
+	/* Save data to files*/
 	// format file name
 	strftime(data_file_name, sizeof(data_file_name), "data/%Y-%m-%d_%H:%M:%S-", localtime(&rawtime));
 	if(argc==2 && vol!=-1){
@@ -211,7 +212,6 @@ int main(int argc, char* argv[])
 	strcpy(raw_data_name, data_file_name);
 	strcat(data_file_name,".dat" );
 	strcat(raw_data_name,".raw" );
-	
 	printf("Saving processed sound data to: %s\n",data_file_name);
 	data_file = fopen(data_file_name,"w");	// open file in write mode
 	/* add current time value to top of file */
@@ -224,7 +224,6 @@ int main(int argc, char* argv[])
 		fprintf( data_file, "%f\n", output_buff[j] );
 	}
 	fclose(data_file);
-
 	// Write raw data if defined
 	if(RAW_ENABLE){
 		FILE* temp_fd = fopen(raw_data_name,"w");	// open file in write mode
@@ -234,6 +233,8 @@ int main(int argc, char* argv[])
 		fclose(temp_fd);
 	}
 
+	/*Load model and estimate*/
+	res = OCC_est(MODEL_PATH);
 
 	iolib_free();
 	return 0;
