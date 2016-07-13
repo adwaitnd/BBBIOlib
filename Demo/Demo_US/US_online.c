@@ -30,7 +30,7 @@
 #define WNUM	4 //Number of windows for gen training features
 #define FSIZE	WNUM*PRC_WSIZE //ttl feature size
 
-int Occ_est(char* path, int flen, float* data){
+int Occ_est(char* path, int flen, emxArray_real32_T* input, emxArray_real32_T* output, float* data){
 	int res = 0;
 	/*Load the model from path*/
 	FILE* fd;
@@ -44,6 +44,7 @@ int Occ_est(char* path, int flen, float* data){
 	[v_norm, v_mean, num_pca, v_pca, v_0, base, unit_d]
 	Estmation = (abs((data/v_norm - v_mean)*v_pca*weight - v_0)-base)/unit_d
 	*/
+	printf("Reading path: %s\n", path);
 	fd = fopen(path, "r");
 	if(fd==NULL){
 		printf("Model not found\n");
@@ -57,7 +58,7 @@ int Occ_est(char* path, int flen, float* data){
 	return res;
 }
 
-int BBB_init(){
+int BBB_init(unsigned int* buffer_AIN_2){
 	/* BBBIOlib init*/
 	iolib_init();
 	BBBIO_sys_Enable_GPIO(BBBIO_GPIO1);
@@ -106,14 +107,19 @@ int BBB_free(){
 	return 0;
 }
 
-int Playback_record(int flag, int vol, emxArray_real32_T* input_pt, emxArray_real32_T prc_pt, float* output_buff){
+int Playback_record(int flag, int label, int vol, emxArray_real32_T* input_pt, unsigned int buffer_AIN_2[BUFFER_SIZE], emxArray_real32_T* prc_pt, float* output_buff){
 
 	time_t rawtime;
+	int i, j, wsize = WLEN;
 	int fd;
 	struct termios old, uart_set;	
 	char vol_buff[3]="vU"; // default v=85
 	char data_file_name[128];
 	char raw_data_name[128];
+	char UART_PATH[30] = "/dev/ttyO5";
+	char temp_buff[10]="";
+	FILE* data_file;
+	float input[BUFFER_SIZE] = {0};
 
 	/* Start playback */
 	printf("Starting capture with rate %d ...\n", SAMPLE_SIZE);
@@ -145,9 +151,6 @@ int Playback_record(int flag, int vol, emxArray_real32_T* input_pt, emxArray_rea
 	}
 	write(fd, vol_buff, 2);
 	usleep(500000);
-	//if(read(fd,&rec_buf,sizeof(rec_buf)) > 0){
-	//	printf("Set complete.\n");
-	//}
 	printf("Fire in the hole!\n");
 	// Fire the chirp!
 	write(fd, "f", 1);
@@ -177,15 +180,13 @@ int Playback_record(int flag, int vol, emxArray_real32_T* input_pt, emxArray_rea
 	//	printf("Get %f\n", input[i]);
 	//}
 	/* FFT the segmented raw data based on window size*/
-	//input_pt->size = &wsize;
-	//input_pt->allocatedSize = wsize * sizeof(float);
-	//input_pt->numDimensions = 1;
-	//input_pt->canFreeData = false;	
 	for(i=0;i<WNUM;i++){
 		input_pt->data = (float*)&(input[i*wsize]);
+		//input_pt->data = (float*)&(buffer_AIN_2[i*wsize]);
 		Prep_fft(input_pt, FS, START_F-(EX_BAND/2), END_F+(EX_BAND/2), prc_pt);
 		for(j=0;j<PRC_WSIZE;j++){
-			output_buff[j+i*PRC_WSIZE] = local_buff[j];
+			//output_buff[j+i*PRC_WSIZE] = local_buff[j];
+			output_buff[j+i*PRC_WSIZE] = prc_pt->data[j];
 			//printf("output[%d] = %f\n", j+i*PRC_WSIZE, output_buff[j+i*PRC_WSIZE]);
 		}
 	}
@@ -194,12 +195,10 @@ int Playback_record(int flag, int vol, emxArray_real32_T* input_pt, emxArray_rea
 	/* Save data to files*/
 	// format file name
 	strftime(data_file_name, sizeof(data_file_name), "data/%Y-%m-%d_%H:%M:%S-", localtime(&rawtime));
-	if(argc==2 && vol!=-1){
-		strcat(data_file_name, argv[1]);
-	}
-	else{
-		strcat(data_file_name, "85");
-	}
+	sprintf(temp_buff, "%d", vol);
+	strcat(data_file_name, temp_buff);
+
+
 	strcpy(raw_data_name, data_file_name);
 	strcat(data_file_name,".dat" );
 	strcat(raw_data_name,".raw" );
@@ -230,26 +229,15 @@ int Playback_record(int flag, int vol, emxArray_real32_T* input_pt, emxArray_rea
 
 int main(int argc, char* argv[])
 {
-	unsigned int sample;
-	int i, j, count=0, local_size=PRC_SIZE, raw_size = BUFFER_SIZE, wsize = WLEN;
+	int local_size=PRC_SIZE, wsize = WLEN;
 	unsigned int buffer_AIN_2[BUFFER_SIZE] ={0};
-	time_t rawtime;
-	//char data_file_name[128];
-	//char raw_data_name[128];
-	FILE* data_file;
-	FILE* filter_fd;
-	char UART_PATH[30] = "/dev/ttyO5";
-	char rec_buf[50] = "";
-	char MODEL_PATH[30] = PATH_TO_MODEL;
-	//int fd;
-	int vol = -1;
+	char model_path[30] = PATH_TO_MODEL;
+	int vol = 85;
 	int label = -1;
 	int res = 0;
 	int flag=0;
-	//struct termios old, uart_set;	
 	float local_buff[PRC_SIZE] = {0};
 	float output_buff[PRC_SIZE] = {0};
-	float input[BUFFER_SIZE] = {0};
 	struct emxArray_real32_T prc_data;	
 	struct emxArray_real32_T* prc_pt = &prc_data;
 	prc_pt->data = (float*)&local_buff;
@@ -259,21 +247,14 @@ int main(int argc, char* argv[])
 	prc_pt->canFreeData = false;	
 	struct emxArray_real32_T input_data;	
 	struct emxArray_real32_T* input_pt = &input_data;
-	input_pt->data = (float*)&input;
 	input_pt->size = &wsize;
 	input_pt->allocatedSize = wsize * sizeof(float);
 	input_pt->numDimensions = 1;
 	input_pt->canFreeData = false;	
-	//input_pt->size = &raw_size;
-	//input_pt->allocatedSize = raw_size * sizeof(float);
-	//input_pt->numDimensions = 1;
-	//input_pt->canFreeData = false;	
 
-	//default volume is(85)
-	//char vol_buff[3]="vU";
 	if(argc>=2){
 		vol = atoi(argv[1]);
-		if(atoi(argv[1]==0)){
+		if(vol==0){
 			flag=1; //for warmup
 		}
 		if(argc==3){
@@ -284,13 +265,13 @@ int main(int argc, char* argv[])
 		printf("Usage:./US_online [volume*] [label]\n");
 	}
 
-	BBB_init();
+	BBB_init(buffer_AIN_2);
 
 	/* Start playback */
-	Playback_record(flag, vol, prc_pt);
+	Playback_record(flag, label, vol, input_pt, buffer_AIN_2, prc_pt, output_buff);
 
 	/*Load model and estimate*/
-	res = Occ_est(MODEL_PATH, FSIZE, input_pt, prc_pt, output_buff);
+	res = Occ_est(model_path, FSIZE, input_pt, prc_pt, output_buff);
 	
 	/*clean up*/
 	BBB_free();
