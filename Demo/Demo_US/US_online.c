@@ -13,9 +13,11 @@
 #include "Prep_fft.h"
 
 /* ----------------------------------------------------------- */
-// Collect for 0.3s with 192k
+// Occ: 0.3s with 192k
 #define BUFFER_SIZE 57600
 #define SAMPLE_SIZE 57600
+// Presence: 50ms with 192k
+#define TONE_SAMPLE_SIZE 9600
 #define PATH_TO_MODEL "/home/debian/Model.txt"  // File name of the model
 #define RAW_ENABLE	1	// Keep raw data or not
 #define CLEN	0.03
@@ -149,7 +151,7 @@ float Occ_est(char* path, int flen, float* data){
 	temp = 0;
 	d  = strtok(line, " ");
 	while(d!=NULL){
-		//TODO: too many feature check
+		//TODO: Check if too many features
 		ftemp = atof(d);
 		pca_buff[temp] = pca_buff[temp] - ftemp;
 		if(pca_buff[temp]<0){
@@ -247,10 +249,86 @@ int BBB_free(){
 	return 0;
 }
 
-int Playback_record(int flag, int label, int vol, emxArray_real32_T* input_pt, unsigned int buffer_AIN_2[BUFFER_SIZE], emxArray_real32_T* prc_pt, float* output_buff){
+int Presence_detect(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* output_buff){
+	
+	time_t rawtime;
+	int fd, i=0, j=0, local_size=PRC_SIZE, wsize = WLEN;
+	struct termios old, uart_set;	
+	char vol_buff[3]="vU"; // default v=85
+	char UART_PATH[30] = "/dev/ttyO5";
+	float local_buff[PRC_SIZE] = {0};
+
+	struct emxArray_real32_T prc_data;	
+	struct emxArray_real32_T* prc_pt = &prc_data;
+	prc_pt->data = (float*)&local_buff;
+	prc_pt->size = &local_size;
+	prc_pt->allocatedSize = local_size * sizeof(float);
+	prc_pt->numDimensions = 1;
+	prc_pt->canFreeData = false;	
+	struct emxArray_real32_T input_data;	
+	struct emxArray_real32_T* input_pt = &input_data;
+	input_pt->size = &wsize;
+	input_pt->allocatedSize = wsize * sizeof(float);
+	input_pt->numDimensions = 1;
+	input_pt->canFreeData = false;	
+
+	/* Start playback */
+	printf("Starting capture with rate %d ...\n", SAMPLE_SIZE);
+	// get time
+	time(&rawtime);
+	//Open uart
+	fd = open(UART_PATH, O_RDWR | O_NOCTTY);
+	if(fd < 0){
+		printf("Dev port failed to open\n");
+		return 1;
+	}
+	//save current attributes
+	tcgetattr(fd,&old);
+	bzero(&uart_set,sizeof(uart_set)); 
+
+	uart_set.c_cflag = B115200 | CS8 | CLOCAL | CREAD;
+	uart_set.c_iflag = IGNPAR | ICRNL;
+	uart_set.c_oflag = 0;
+	uart_set.c_lflag = 0;
+	uart_set.c_cc[VTIME] = 0;
+	uart_set.c_cc[VMIN]  = 1;
+
+	//clean the line and set the attributes
+
+	tcflush(fd,TCIFLUSH);
+	tcsetattr(fd,TCSANOW,&uart_set);
+	if(vol!=-1){
+		sprintf(vol_buff, "v%c", vol);
+	}
+	write(fd, vol_buff, 2);
+	usleep(500000);
+	printf("Fire in the hole!\n");
+	// Fire the chirp!
+	write(fd, "t", 1);
+	usleep(1000);
+	tcflush(fd,TCIFLUSH);
+	tcsetattr(fd,TCSANOW,&old);
+	close(fd);
+	
+	
+	/* Start capture */
+	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
+	BBBIO_ADCTSC_work(TONE_SAMPLE_SIZE);
+	printf("Recording done.\n");
+
+	/* Preprocessing */
+	// copy and convert to float
+	for(i=0;i<BUFFER_SIZE;i++){
+		//input[i] = (float)buffer_AIN_2[i];
+	} 
+	return -1;
+}
+
+
+int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* output_buff){
 
 	time_t rawtime;
-	int i, j, wsize = WLEN;
+	int i=0, j=0, local_size=PRC_SIZE, wsize = WLEN;
 	int fd;
 	struct termios old, uart_set;	
 	char vol_buff[3]="vU"; // default v=85
@@ -258,8 +336,22 @@ int Playback_record(int flag, int label, int vol, emxArray_real32_T* input_pt, u
 	char raw_data_name[128];
 	char UART_PATH[30] = "/dev/ttyO5";
 	char temp_buff[10]="";
+	float local_buff[PRC_SIZE] = {0};
 	FILE* data_file;
 	float input[BUFFER_SIZE] = {0};
+	struct emxArray_real32_T prc_data;	
+	struct emxArray_real32_T* prc_pt = &prc_data;
+	prc_pt->data = (float*)&local_buff;
+	prc_pt->size = &local_size;
+	prc_pt->allocatedSize = local_size * sizeof(float);
+	prc_pt->numDimensions = 1;
+	prc_pt->canFreeData = false;	
+	struct emxArray_real32_T input_data;	
+	struct emxArray_real32_T* input_pt = &input_data;
+	input_pt->size = &wsize;
+	input_pt->allocatedSize = wsize * sizeof(float);
+	input_pt->numDimensions = 1;
+	input_pt->canFreeData = false;	
 
 	/* Start playback */
 	printf("Starting capture with rate %d ...\n", SAMPLE_SIZE);
@@ -301,7 +393,6 @@ int Playback_record(int flag, int label, int vol, emxArray_real32_T* input_pt, u
 	
 	
 	/* Start capture */
-	//usleep(30000); // wait for chirp to finish 
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
 	BBBIO_ADCTSC_work(SAMPLE_SIZE);
 	printf("Recording done.\n");
@@ -337,8 +428,6 @@ int Playback_record(int flag, int label, int vol, emxArray_real32_T* input_pt, u
 	strftime(data_file_name, sizeof(data_file_name), "data/%Y-%m-%d_%H:%M:%S-", localtime(&rawtime));
 	sprintf(temp_buff, "%d", vol);
 	strcat(data_file_name, temp_buff);
-
-
 	strcpy(raw_data_name, data_file_name);
 	strcat(data_file_name,".dat" );
 	strcat(raw_data_name,".raw" );
@@ -369,29 +458,14 @@ int Playback_record(int flag, int label, int vol, emxArray_real32_T* input_pt, u
 
 int main(int argc, char* argv[])
 {
-	int local_size=PRC_SIZE, wsize = WLEN;
+	//int local_size=PRC_SIZE, wsize = WLEN;
 	unsigned int buffer_AIN_2[BUFFER_SIZE] ={0};
 	char model_path[30] = PATH_TO_MODEL;
 	int vol = 85;
 	int label = -1;
 	float res = 0;
 	int flag=0;
-	float local_buff[PRC_SIZE] = {0};
 	float output_buff[PRC_SIZE] = {0};
-	struct emxArray_real32_T prc_data;	
-	struct emxArray_real32_T* prc_pt = &prc_data;
-	prc_pt->data = (float*)&local_buff;
-	prc_pt->size = &local_size;
-	prc_pt->allocatedSize = local_size * sizeof(float);
-	prc_pt->numDimensions = 1;
-	prc_pt->canFreeData = false;	
-	struct emxArray_real32_T input_data;	
-	struct emxArray_real32_T* input_pt = &input_data;
-	input_pt->size = &wsize;
-	input_pt->allocatedSize = wsize * sizeof(float);
-	input_pt->numDimensions = 1;
-	input_pt->canFreeData = false;	
-
 	if(argc>=2){
 		vol = atoi(argv[1]);
 		if(vol==0){
@@ -408,7 +482,7 @@ int main(int argc, char* argv[])
 	BBB_init(buffer_AIN_2);
 
 	/* Start playback */
-	Playback_record(flag, label, vol, input_pt, buffer_AIN_2, prc_pt, output_buff);
+	Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
 
 	/*Load model if existed and then estimate occupancy*/
 	res = Occ_est(model_path, FSIZE, output_buff);
