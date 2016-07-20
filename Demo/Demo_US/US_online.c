@@ -257,6 +257,7 @@ int Presence_detect(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* outp
 	char vol_buff[3]="vU"; // default v=85
 	char UART_PATH[30] = "/dev/ttyO5";
 	float local_buff[PRC_SIZE] = {0};
+	float input[TONE_SAMPLE_SIZE] = {0};
 
 	struct emxArray_real32_T prc_data;	
 	struct emxArray_real32_T* prc_pt = &prc_data;
@@ -411,8 +412,8 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	//	printf("Get %f\n", input[i]);
 	//}
 	/* FFT the segmented raw data based on window size*/
-	for(i=0;i<WNUM;i++){
-		input_pt->data = (float*)&(input[i*wsize]);
+	for(i=0;i<WNUM;i++){ 
+		input_pt->data = (float*)&(input[(i+1)*wsize]); //ignore the first window since its crosstalk
 		//input_pt->data = (float*)&(buffer_AIN_2[i*wsize]);
 		Prep_fft(input_pt, FS, START_F-(EX_BAND/2), END_F+(EX_BAND/2), prc_pt);
 		for(j=0;j<PRC_WSIZE;j++){
