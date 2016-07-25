@@ -11,6 +11,7 @@
 #include "Prep_fft_emxutil.h"
 #include "fft.h"
 #include "Prep_fft.h"
+#include <math.h>
 
 /* ----------------------------------------------------------- */
 // Occ: 0.3s with 192k
@@ -32,9 +33,12 @@
 #define WNUM	4 //Number of windows for gen training features
 #define FSIZE	WNUM*PRC_WSIZE //ttl feature size
 #define MAX_OCC	20
+#define TONE_DELAY 192 //0.001*FS
+#define TONE_PRC_SIZE 17 //calculated like PRC_WSIZE 
+#define DELAY	2
 
 //For debugging
-#define DEBUG	1
+#define DEBUG	0
 
 float Occ_est(char* path, int flen, float* data){
 	int i, j;
@@ -249,15 +253,101 @@ int BBB_free(){
 	return 0;
 }
 
-int Presence_detect(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* output_buff){
+float cal_std(float* input, float size){
+	float res = 0;
+	int i, n;
+    	float average, variance, std_deviation, sum = 0, sum1 = 0;
+ 
+    /*  Compute the sum of all elements */
+    	for (i = 0; i < size; i++){
+		sum = sum + input[i];
+    	}
+    	average = sum / size;
+    /*  Compute  variance  and standard deviation  */
+    	for (i = 0; i < size; i++){
+		sum1 = sum1 + pow((input[i] - average), 2);
+    	}
+    	variance = sum1 / size;
+    	std_deviation = sqrt(variance);
+    	//printf("Average of all elements = %.2f\n", average);
+    	//printf("variance of all elements = %.2f\n", variance);
+    	//printf("Standard deviation = %.2f\n", std_deviation);
+	return std_deviation;
+}
+
+int Presence_detect(float input[5][TONE_PRC_SIZE], float dop_thres, float freq_thres, float energy_thres){
+	int i=0, j=0;
+	//float temp_max[TONE_PRC_SIZE]={0};
+	float temp_max = 0;
+	float temp_data[5] = {0};
+	float sum=0;
+	float dop=0, freq=0, energy=0;
+	printf("In detect:\n");
+	/*
+	for(i=0;i<5;i++){
+		for(j=0;j<TONE_PRC_SIZE;j++){
+			printf("[%f] ", input[i][j]);
+		}
+		printf("\n");
+	}
+	for(i=0;i<5;i++){
+		for(j=0;j<TONE_PRC_SIZE;j++){
+			if(input[i][j]>temp_max){
+				temp_max= input[i][j];
+			}
+		}
+	}
+	*/
+	//Normalize
+	for(i=0;i<5;i++){
+		for(j=0;j<TONE_PRC_SIZE;j++){
+			temp_data[i]+=input[i][j];
+		}
+	}
+	for(i=0;i<5;i++){
+		if(temp_data[i]>temp_max){
+			temp_max = temp_data[i];
+		}
+	}
+	for(i=0;i<5;i++){
+		temp_data[i] = temp_data[i]/temp_max;
+	}
+	
+	for(i=0;i<5;i++){
+		for(j=0;j<TONE_PRC_SIZE;j++){
+			input[i][j] = input[i][j]/temp_max;
+			//printf("[%f] ", input[i][j]);
+		}
+		//printf("\n");
+	}
+	
+	//Cal var of energy 
+	energy = pow(cal_std(temp_data, 5),2);
+	printf("Get mean energy var %f\n", energy);
+	//Cal Doppler
+	//Cal var of freq 
+	for(i=0;i<TONE_PRC_SIZE;i++){
+		for(j=0;j<5;j++){
+			temp_data[j] = input[j][i];
+		}	
+		sum += cal_std(temp_data, 5);	
+	}
+	freq = sum / (float)TONE_PRC_SIZE;	
+	printf("Get mean std %f\n", freq);
+	
+	//Output decision
+	return (dop>dop_thres) || (freq>freq_thres) || (energy>energy_thres);
+}
+int Presence_record(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* output_buff){
 	
 	time_t rawtime;
-	int fd, i=0, j=0, local_size=PRC_SIZE, wsize = WLEN;
+	int fd, i=0, j=0, local_size=TONE_PRC_SIZE, wsize = TONE_SAMPLE_SIZE-TONE_DELAY;
 	struct termios old, uart_set;	
 	char vol_buff[3]="vU"; // default v=85
 	char UART_PATH[30] = "/dev/ttyO5";
-	float local_buff[PRC_SIZE] = {0};
-	float input[TONE_SAMPLE_SIZE] = {0};
+	float local_buff[TONE_PRC_SIZE] = {0};
+	float input[TONE_SAMPLE_SIZE-TONE_DELAY] = {0};
+	FILE* file_fd;
 
 	struct emxArray_real32_T prc_data;	
 	struct emxArray_real32_T* prc_pt = &prc_data;
@@ -268,6 +358,7 @@ int Presence_detect(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* outp
 	prc_pt->canFreeData = false;	
 	struct emxArray_real32_T input_data;	
 	struct emxArray_real32_T* input_pt = &input_data;
+	input_pt->data = (float*)&input;
 	input_pt->size = &wsize;
 	input_pt->allocatedSize = wsize * sizeof(float);
 	input_pt->numDimensions = 1;
@@ -314,15 +405,32 @@ int Presence_detect(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* outp
 	
 	/* Start capture */
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
-	BBBIO_ADCTSC_work(TONE_SAMPLE_SIZE);
+	BBBIO_ADCTSC_work(TONE_SAMPLE_SIZE+WLEN);
 	printf("Recording done.\n");
 
 	/* Preprocessing */
 	// copy and convert to float
-	for(i=0;i<BUFFER_SIZE;i++){
-		//input[i] = (float)buffer_AIN_2[i];
+	for(i=0;i<TONE_SAMPLE_SIZE-TONE_DELAY;i++){
+		input[i] = (float)buffer_AIN_2[i+TONE_DELAY+5760]; // skip crosstalk
 	} 
-	return -1;
+	Prep_fft(input_pt, FS, START_F-(EX_BAND/2), START_F+(EX_BAND/2), prc_pt);
+	for(i=0;i<TONE_PRC_SIZE;i++){
+		output_buff[i] = local_buff[i];
+		//printf("[%f] ", local_buff[i]);
+	}
+	
+	file_fd = fopen("raw_data.txt","w");	// open file in write mode
+	for(j = 0 ; j < TONE_SAMPLE_SIZE-TONE_DELAY ; j++){
+			fprintf(file_fd, "%f\n", input[j] );
+	}
+	fclose(file_fd);
+	file_fd = fopen("prc_data.txt","w");	// open file in write mode
+	for(j = 0 ; j < TONE_PRC_SIZE ; j++){
+			fprintf(file_fd, "%f\n", output_buff[j] );
+	}
+	fclose(file_fd);
+		
+	return 0;
 }
 
 
@@ -339,6 +447,7 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	char temp_buff[10]="";
 	float local_buff[PRC_SIZE] = {0};
 	FILE* data_file;
+	FILE* temp_fd;
 	float input[BUFFER_SIZE] = {0};
 	struct emxArray_real32_T prc_data;	
 	struct emxArray_real32_T* prc_pt = &prc_data;
@@ -447,7 +556,7 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	fclose(data_file);
 	// Write raw data if defined
 	if(RAW_ENABLE){
-		FILE* temp_fd = fopen(raw_data_name,"w");	// open file in write mode
+		temp_fd = fopen(raw_data_name,"w");	// open file in write mode
 		for(j = 0 ; j < BUFFER_SIZE ; j++){
 			fprintf(temp_fd, "%u\n", buffer_AIN_2[j] );
 		}
@@ -464,9 +573,11 @@ int main(int argc, char* argv[])
 	char model_path[30] = PATH_TO_MODEL;
 	int vol = 85;
 	int label = -1;
+	int i=0, j=0;
 	float res = 0;
 	int flag=0;
 	float output_buff[PRC_SIZE] = {0};
+	float tone_output[5][TONE_PRC_SIZE] = {0};
 	if(argc>=2){
 		vol = atoi(argv[1]);
 		if(vol==0){
@@ -483,10 +594,15 @@ int main(int argc, char* argv[])
 	BBB_init(buffer_AIN_2);
 
 	/* Start playback */
-	Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
-
+	//Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
+	for(i=0;i<5;i++){
+		Presence_record(100, buffer_AIN_2, tone_output[i]);
+		sleep(DELAY);
+	}
+	res = Presence_detect(tone_output, 10, 0.009, 0.009);
+	printf("Presence decision:%f\n", res);
 	/*Load model if existed and then estimate occupancy*/
-	res = Occ_est(model_path, FSIZE, output_buff);
+	//res = Occ_est(model_path, FSIZE, output_buff);
 	printf("Occupancy: %f\n", res);
 		
 	/*clean up*/
