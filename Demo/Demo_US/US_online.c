@@ -288,7 +288,7 @@ int Presence_detect(float input[5][TONE_PRC_SIZE], float dop_thres, float freq_t
 	//char raw_data_name[128];
 	// get time
 	time(&rawtime);
-	strftime(data_file_name, sizeof(data_file_name), "data2/%Y-%m-%d_%H:%M:%S-presence.dat", localtime(&rawtime));
+	strftime(data_file_name, sizeof(data_file_name), "data/%Y-%m-%d_%H:%M:%S-presence.dat", localtime(&rawtime));
 	printf("In detect:\n");
 	/*
 	for(i=0;i<5;i++){
