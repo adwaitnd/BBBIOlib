@@ -20,7 +20,7 @@
 // Presence: 50ms with 192k
 #define TONE_SAMPLE_SIZE 9600
 #define PATH_TO_MODEL "/home/debian/Model.txt"  // File name of the model
-#define RAW_ENABLE	1	// Keep raw data or not
+#define RAW_ENABLE	0	// Keep raw data or not
 #define CLEN	0.03
 // These parameters should be consistent with the generated chirp file
 #define FS	192000
@@ -276,12 +276,19 @@ float cal_std(float* input, float size){
 }
 
 int Presence_detect(float input[5][TONE_PRC_SIZE], float dop_thres, float freq_thres, float energy_thres){
-	int i=0, j=0;
+	int i=0, j=0, res=-1;
 	//float temp_max[TONE_PRC_SIZE]={0};
 	float temp_max = 0;
 	float temp_data[5] = {0};
 	float sum=0;
 	float dop=0, freq=0, energy=0;
+	time_t rawtime;
+	char data_file_name[128];
+	FILE* file_fd;
+	//char raw_data_name[128];
+	// get time
+	time(&rawtime);
+	strftime(data_file_name, sizeof(data_file_name), "data2/%Y-%m-%d_%H:%M:%S-presence.dat", localtime(&rawtime));
 	printf("In detect:\n");
 	/*
 	for(i=0;i<5;i++){
@@ -335,12 +342,26 @@ int Presence_detect(float input[5][TONE_PRC_SIZE], float dop_thres, float freq_t
 	freq = sum / (float)TONE_PRC_SIZE;	
 	printf("Get mean std %f\n", freq);
 	
-	//Output decision
-	return (dop>dop_thres) || (freq>freq_thres) || (energy>energy_thres);
+	// Output decision
+	res = (dop>dop_thres) || (freq>freq_thres) || (energy>energy_thres);
+	// Write to file 	
+	file_fd = fopen(data_file_name,"w");	// open file in write mode
+	for(i=0;i<5;i++){
+		for(j=0;j<TONE_PRC_SIZE;j++){
+			fprintf(file_fd, "%f ", input[i][j]);
+		}	
+		fprintf(file_fd, "\n");
+	}
+	fprintf(file_fd, "%d\n", res);
+	fclose(file_fd);
+
+	return res;
 }
 int Presence_record(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* output_buff){
 	
 	time_t rawtime;
+	//char data_file_name[128];
+	//char raw_data_name[128];
 	int fd, i=0, j=0, local_size=TONE_PRC_SIZE, wsize = TONE_SAMPLE_SIZE-TONE_DELAY;
 	struct termios old, uart_set;	
 	char vol_buff[3]="vU"; // default v=85
@@ -418,18 +439,20 @@ int Presence_record(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* outp
 		output_buff[i] = local_buff[i];
 		//printf("[%f] ", local_buff[i]);
 	}
-	
+	/*	
 	file_fd = fopen("raw_data.txt","w");	// open file in write mode
 	for(j = 0 ; j < TONE_SAMPLE_SIZE-TONE_DELAY ; j++){
 			fprintf(file_fd, "%f\n", input[j] );
 	}
 	fclose(file_fd);
+	
 	file_fd = fopen("prc_data.txt","w");	// open file in write mode
 	for(j = 0 ; j < TONE_PRC_SIZE ; j++){
 			fprintf(file_fd, "%f\n", output_buff[j] );
 	}
 	fclose(file_fd);
-		
+	*/	
+	
 	return 0;
 }
 
@@ -595,14 +618,18 @@ int main(int argc, char* argv[])
 
 	/* Start playback */
 	//Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
+	
 	for(i=0;i<5;i++){
+		Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
+		sleep(1);
 		Presence_record(100, buffer_AIN_2, tone_output[i]);
 		sleep(DELAY);
 	}
-	res = Presence_detect(tone_output, 10, 0.009, 0.009);
+	res = Presence_detect(tone_output, 10, 0.008, 0.008);
+	
 	printf("Presence decision:%f\n", res);
 	/*Load model if existed and then estimate occupancy*/
-	//res = Occ_est(model_path, FSIZE, output_buff);
+	res = Occ_est(model_path, FSIZE, output_buff);
 	printf("Occupancy: %f\n", res);
 		
 	/*clean up*/
