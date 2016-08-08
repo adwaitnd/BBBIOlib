@@ -37,8 +37,8 @@ do
   DATE=$(date +"%Y-%m-%d_%H:%M:%S")
   streamer -f jpeg -o data/$DATE.jpeg	
   chrt -f 99 ./US_online.out 100
-  DATE=$(date +"%Y-%m-%d_%H:%M:%S")
-  streamer -f jpeg -o data/$DATE.jpeg	
+  #DATE=$(date +"%Y-%m-%d_%H:%M:%S")
+  #streamer -f jpeg -o data/$DATE.jpeg	
 
   DAY=$(date +"%Y-%m-%d")
   #dump to server

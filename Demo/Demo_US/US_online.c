@@ -344,6 +344,9 @@ int Presence_detect(float input[5][TONE_PRC_SIZE], float dop_thres, float freq_t
 	
 	// Output decision
 	res = (dop>dop_thres) || (freq>freq_thres) || (energy>energy_thres);
+
+
+
 	// Write to file 	
 	file_fd = fopen(data_file_name,"w");	// open file in write mode
 	for(i=0;i<5;i++){
@@ -352,8 +355,13 @@ int Presence_detect(float input[5][TONE_PRC_SIZE], float dop_thres, float freq_t
 		}	
 		fprintf(file_fd, "\n");
 	}
+	fprintf(file_fd, "%f\n", dop);
+	fprintf(file_fd, "%f\n", freq);
+	fprintf(file_fd, "%f\n", energy);
 	fprintf(file_fd, "%d\n", res);
 	fclose(file_fd);
+	//
+
 
 	return res;
 }
