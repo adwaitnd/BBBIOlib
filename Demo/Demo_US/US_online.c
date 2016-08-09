@@ -40,7 +40,7 @@
 //For debugging
 #define DEBUG	0
 
-float Occ_est(char* path, int flen, float* data){
+float Occ_est(char* path, int flen, float* data, float weight){
 	int i, j;
 	/*Load the model from path*/
 	FILE* fd;
@@ -79,7 +79,7 @@ float Occ_est(char* path, int flen, float* data){
 		temp = 0;
 		d  = strtok(line, " ");
 		while(d!=NULL){
-			//TODO: too many feature check
+			//TODO: add too many feature check
 			ftemp = atof(d);
 			if(count==1){
 				res_buff[temp] = data[temp]/ftemp;
@@ -637,7 +637,7 @@ int main(int argc, char* argv[])
 	
 	printf("Presence decision:%f\n", res);
 	/*Load model if existed and then estimate occupancy*/
-	res = Occ_est(model_path, FSIZE, output_buff);
+	res = Occ_est(model_path, FSIZE, output_buff, 0.5);
 	printf("Occupancy: %f\n", res);
 		
 	/*clean up*/
