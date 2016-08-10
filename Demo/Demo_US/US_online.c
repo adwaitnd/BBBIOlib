@@ -598,7 +598,10 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	return 0;
 }
 
-int Recal(char* src_path, char* tar_path, float* data){
+int Recal(char* src_path, char* tar_path, float* data[5][PRC_SIZE]){
+	// The model should have the following format: 
+	// [v_norm, v_mean, num_pca, v_pca, v_0, base, unit_d]
+	// The function updates only v_0, base, and unit_d
 	int i, j;
 	FILE* fd1;
 	FILE* fd2;
@@ -607,6 +610,9 @@ int Recal(char* src_path, char* tar_path, float* data){
 	ssize_t read;
 	int count = 0;
 	int npca = 0;
+	float base;
+	float unit_d;
+	
 
 	fd1 = fopen(src_path, "r");
 	fd2 = fopen(tar_path, "w+");
@@ -624,6 +630,7 @@ int Recal(char* src_path, char* tar_path, float* data){
 		printf("Error: model incomplete\n");
 		return -1;
 	}
+	count=0;
 	npca = atoi(line);
 	if(npca<0 || npca>20){
 		printf("Error: num_pca incorrect\n");
@@ -637,10 +644,28 @@ int Recal(char* src_path, char* tar_path, float* data){
 			printf("V_pca incomplete\n");
 			return -1;
 		}
-		//write(fd2, line, strlen(line));
 		fwrite(line, sizeof(char), strlen(line), fd2);
 	}
 	
+	while( count<3 && (read = getline(&line, &len, fd1))!= -3 ){
+		count++;
+		// copy each line
+		if (count==2){
+			base = atof(line);
+			printf("get base %f\n", base);
+		}
+		else if (count==3){
+			unit_d = atof(line);
+			printf("get unit_d %f\n", unit_d);
+		}
+	}
+	if(count<3){
+		printf("Error: model incomplete\n");
+		return -1;
+	}
+	
+	// calculate the new value from the collected data
+
 	printf("Update complete.\n");
 	fclose(fd1);
 	fclose(fd2);
