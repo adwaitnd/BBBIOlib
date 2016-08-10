@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +19,7 @@
 // Presence: 50ms with 192k
 #define TONE_SAMPLE_SIZE 9600
 #define PATH_TO_MODEL "/home/debian/Model.txt"  // File name of the model
+#define PATH_TO_TEMP_MODEL "/home/debian/New_Model.txt"  // File name of the temp model
 #define RAW_ENABLE	0	// Keep raw data or not
 #define CLEN	0.03
 // These parameters should be consistent with the generated chirp file
@@ -60,7 +60,7 @@ float Occ_est(char* path, int flen, float* data, float weight){
 	[v_norm, v_mean, num_pca, v_pca, v_0, base, unit_d]
 	Estmation = (abs((data/v_norm - v_mean)*v_pca*weight - v_0) - base)/unit_d
 	*/
-	printf("Reading path: %s\n", path);
+	printf("Reading model at: %s\n", path);
 	fd = fopen(path, "r");
 	if(fd==NULL){
 		printf("Model not found\n");
@@ -196,6 +196,7 @@ float Occ_est(char* path, int flen, float* data, float weight){
 		printf("RES=%f after unit_d\n", res);
 	}
 
+	fclose(fd);
 	free(line);
 	free(res_buff);
 	if(pca_buff!=NULL){
@@ -597,17 +598,69 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	return 0;
 }
 
+int Recal(char* src_path, char* tar_path, float* data){
+	int i, j;
+	FILE* fd1;
+	FILE* fd2;
+	char* line = NULL;
+	size_t len=0;
+	ssize_t read;
+	int count = 0;
+	int npca = 0;
+
+	fd1 = fopen(src_path, "r");
+	fd2 = fopen(tar_path, "w+");
+	if(fd1==NULL || fd2==NULL){
+		printf("Model open failed.\n");
+		return -1;
+	}	
+
+	while( count<3 && (read = getline(&line, &len, fd1))!= -3 ){
+		count++;
+		// copy each line
+		fwrite(line, sizeof(char), strlen(line), fd2);
+	}
+	if(count<3){
+		printf("Error: model incomplete\n");
+		return -1;
+	}
+	npca = atoi(line);
+	if(npca<0 || npca>20){
+		printf("Error: num_pca incorrect\n");
+		return -1;
+	}
+	//pca_buff = malloc(npca*sizeof(float));
+	for(i=0;i<npca;i++){
+		//pca_buff[i]=0;
+		read = getline(&line, &len, fd1);
+		if(read==-1){
+			printf("V_pca incomplete\n");
+			return -1;
+		}
+		//write(fd2, line, strlen(line));
+		fwrite(line, sizeof(char), strlen(line), fd2);
+	}
+	
+	printf("Update complete.\n");
+	fclose(fd1);
+	fclose(fd2);
+
+	return 0;
+}
+
 int main(int argc, char* argv[])
 {
 	//int local_size=PRC_SIZE, wsize = WLEN;
-	unsigned int buffer_AIN_2[BUFFER_SIZE] ={0};
+	unsigned int buffer_AIN_2[BUFFER_SIZE]={0};
 	char model_path[30] = PATH_TO_MODEL;
+	char temp_model_path[30] = PATH_TO_TEMP_MODEL;
 	int vol = 85;
 	int label = -1;
 	int i=0, j=0;
 	float res = 0;
 	int flag=0;
 	float output_buff[PRC_SIZE] = {0};
+	float recal_buff[5][PRC_SIZE] = {0};
 	float tone_output[5][TONE_PRC_SIZE] = {0};
 	if(argc>=2){
 		vol = atoi(argv[1]);
@@ -626,14 +679,26 @@ int main(int argc, char* argv[])
 
 	/* Start playback */
 	//Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
-	
+	/*
 	for(i=0;i<5;i++){
 		Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
 		sleep(1);
 		Presence_record(100, buffer_AIN_2, tone_output[i]);
 		sleep(DELAY);
+	}*/
+	//res = Presence_detect(tone_output, 10, 0.008, 0.008);
+	
+	//if constantly empty, recalibrate the model
+	if (res==0){
+		// Recalibration 
+		printf("Start recalibration ...\n");
+		// collect some new data
+		for(i=0;i<5;i++){
+			Playback_record(flag, label, vol, buffer_AIN_2, recal_buff[i]);
+			sleep(1);
+		}
+		Recal(model_path, temp_model_path, recal_buff);
 	}
-	res = Presence_detect(tone_output, 10, 0.008, 0.008);
 	
 	printf("Presence decision:%f\n", res);
 	/*Load model if existed and then estimate occupancy*/
