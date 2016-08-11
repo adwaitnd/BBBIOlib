@@ -139,7 +139,6 @@ float Occ_est(char* path, int flen, float* data, float weight){
 		}
 	}
 	//TODO:multiply pca_buff by weight based on presence detection
-	//TODO:for debugging		
 	if(DEBUG){	
 		for(i=0;i<npca;i++){
 			printf("%f ", pca_buff[i]);
@@ -170,7 +169,6 @@ float Occ_est(char* path, int flen, float* data, float weight){
 		return -1;
 	}
 	if(DEBUG){	
-		//TODO:for debugging		
 		for(i=0;i<npca;i++){
 			printf("%f ", pca_buff[i]);
 		}
@@ -598,21 +596,29 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	return 0;
 }
 
-int Recal(char* src_path, char* tar_path, float* data[5][PRC_SIZE]){
+int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
 	// The model should have the following format: 
 	// [v_norm, v_mean, num_pca, v_pca, v_0, base, unit_d]
-	// The function updates only v_0, base, and unit_d
-	int i, j;
+	// The function updates only the v_0, base, and unit_d
+	int i, j, temp;
 	FILE* fd1;
 	FILE* fd2;
 	char* line = NULL;
+	char* d;
 	size_t len=0;
 	ssize_t read;
 	int count = 0;
 	int npca = 0;
 	float base;
 	float unit_d;
-	
+	float temp_sum = 0;
+	float ftemp=0;
+	float** pca_buff=NULL;	
+	float** prc_data;
+	prc_data = malloc(5*sizeof(float*));
+	for(i=0;i<5;i++){
+		prc_data[i] = malloc(flen * sizeof(float));
+	}
 
 	fd1 = fopen(src_path, "r");
 	fd2 = fopen(tar_path, "w+");
@@ -625,6 +631,22 @@ int Recal(char* src_path, char* tar_path, float* data[5][PRC_SIZE]){
 		count++;
 		// copy each line
 		fwrite(line, sizeof(char), strlen(line), fd2);
+		// extract elements
+		temp = 0;
+		d  = strtok(line, " ");
+		while(d!=NULL){
+			ftemp = atof(d);
+			for(i=0;i<5;i++){
+				if(count==1){
+					prc_data[i][temp] = data[i][temp]/ftemp;
+				}
+				else if(count==2){
+					prc_data[i][temp] = data[i][temp]-ftemp;
+				}
+			}
+			temp++;
+			d = strtok(NULL, " ");
+		}
 	}
 	if(count<3){
 		printf("Error: model incomplete\n");
@@ -636,7 +658,10 @@ int Recal(char* src_path, char* tar_path, float* data[5][PRC_SIZE]){
 		printf("Error: num_pca incorrect\n");
 		return -1;
 	}
-	//pca_buff = malloc(npca*sizeof(float));
+	pca_buff = malloc(5*sizeof(float*));
+	for(i=0;i<5;i++){
+		pca_buff[i] = malloc(npca*sizeof(float));
+	}
 	for(i=0;i<npca;i++){
 		//pca_buff[i]=0;
 		read = getline(&line, &len, fd1);
@@ -645,6 +670,18 @@ int Recal(char* src_path, char* tar_path, float* data[5][PRC_SIZE]){
 			return -1;
 		}
 		fwrite(line, sizeof(char), strlen(line), fd2);
+		// project with the average location 
+		temp=0;
+		d  = strtok(line, " ");
+		while(d!=NULL && temp<flen){
+			ftemp = atof(d);
+			//printf("[%f %f]", ftemp, res_buff[temp]);
+			for(j=0;j<5;j++){
+				pca_buff[j][i] += prc_data[j][temp]*ftemp;
+			}
+			temp++;
+			d = strtok(NULL, " ");
+		}
 	}
 	
 	while( count<3 && (read = getline(&line, &len, fd1))!= -3 ){
@@ -664,11 +701,25 @@ int Recal(char* src_path, char* tar_path, float* data[5][PRC_SIZE]){
 		return -1;
 	}
 	
-	// calculate the new value from the collected data
+	// calculate the new value from prcessed data in pca_buff[5][npca]
+	for(i=0;i<5;i++){
+		//temp_sum
+	}
+
 
 	printf("Update complete.\n");
 	fclose(fd1);
 	fclose(fd2);
+	for(i=0;i<5;i++){
+		free(prc_data[i]);
+	}
+	free(prc_data);
+	if(pca_buff!=NULL){
+		for(i=0;i<5;i++){
+			free(pca_buff[i]);
+		}
+		free(pca_buff);
+	}
 
 	return 0;
 }
@@ -722,13 +773,15 @@ int main(int argc, char* argv[])
 			Playback_record(flag, label, vol, buffer_AIN_2, recal_buff[i]);
 			sleep(1);
 		}
-		Recal(model_path, temp_model_path, recal_buff);
+		Recal(model_path, temp_model_path, FSIZE, recal_buff);
 	}
 	
 	printf("Presence decision:%f\n", res);
 	/*Load model if existed and then estimate occupancy*/
 	res = Occ_est(model_path, FSIZE, output_buff, 0.5);
 	printf("Occupancy: %f\n", res);
+	res = Occ_est(temp_model_path, FSIZE, output_buff, 0.5);
+	printf("Recalibrated Occupancy: %f\n", res);
 		
 	/*clean up*/
 	BBB_free();
