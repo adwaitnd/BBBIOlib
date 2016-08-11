@@ -786,7 +786,7 @@ int main(int argc, char* argv[])
 	int vol = 85;
 	int label = -1;
 	int i=0, j=0;
-	float res = 0;
+	float res_pre = 0;
 	float res_old = 0;
 	float res_new = 0;
 	int flag=0;
@@ -815,21 +815,9 @@ int main(int argc, char* argv[])
 		Presence_record(100, buffer_AIN_2, tone_output[i]);
 		sleep(1);
 	}
-	res = Presence_detect(tone_output, 10, 0.008, 0.008);
-	printf("Presence decision:%f\n", res);
+	res_pre = Presence_detect(tone_output, 10, 0.008, 0.008);
+	printf("*** [1]Presence decision:%f\n", res_pre);
 	
-	//if constantly empty, recalibrate the model
-	if (res==0){
-		// Recalibration 
-		printf("Start recalibration ...\n");
-		// collect some new data
-		for(i=0;i<5;i++){
-			Playback_record(flag, label, vol, buffer_AIN_2, recal_buff[i]);
-			sleep(1);
-		}
-		Recal(model_path, temp_model_path, FSIZE, recal_buff);
-	}
-		
 	/*Load model if existed and then estimate occupancy*/
 	//Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
 	Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
@@ -839,9 +827,32 @@ int main(int argc, char* argv[])
 		res_old += Occ_est(model_path, FSIZE, output_buff, 0.5);
 		res_new += Occ_est(temp_model_path, FSIZE, output_buff, 0.5);
 	}
-	printf("[OLD]Occupancy: %f\n", res_old/5);
-	printf("[NEW]Occupancy: %f\n", res_new/5);
+	printf("*** [OLD]Occupancy: %f\n", res_old/5);
+	printf("*** [NEW]Occupancy: %f\n", res_new/5);
 		
+
+	//if empty, test again
+	if (res_pre==0){
+		for(i=0;i<5;i++){
+			Presence_record(100, buffer_AIN_2, tone_output[i]);
+			sleep(1);
+		}
+		res_pre = Presence_detect(tone_output, 10, 0.008, 0.008);
+		printf("*** [2]Presence decision:%f\n", res_pre);
+		// recalibrate if both are detected as empty 
+		if (res_pre==0){
+			// Recalibration 
+			printf("*** Start recalibration ...\n");
+			// collect some new data
+			for(i=0;i<5;i++){
+				Playback_record(flag, label, vol, buffer_AIN_2, recal_buff[i]);
+				sleep(1);
+			}
+			Recal(model_path, temp_model_path, FSIZE, recal_buff);
+		}
+	}
+
+
 	/*clean up*/
 	BBB_free();
 	return 0;
