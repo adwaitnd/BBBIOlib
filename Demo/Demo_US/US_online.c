@@ -185,7 +185,7 @@ float Occ_est(char* path, int flen, float* data, float weight){
 		printf("RES=%f after base\n", res);
 	}
 	if((read = getline(&line, &len, fd)) == -1){
-		printf("No uni_d\n");
+		printf("No unit_d\n");
 		return -1;
 	}
 	ftemp = atof(line); // unit_d
@@ -600,7 +600,7 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
 	// The model should have the following format: 
 	// [v_norm, v_mean, num_pca, v_pca, v_0, base, unit_d]
 	// The function updates only the v_0, base, and unit_d
-	int i, j, temp;
+	int i, j, temp, offset;
 	FILE* fd1;
 	FILE* fd2;
 	char* line = NULL;
@@ -609,15 +609,20 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
 	ssize_t read;
 	int count = 0;
 	int npca = 0;
+	char str[200];
 	float base;
+	float new_base = 0;
 	float unit_d;
-	float temp_sum = 0;
 	float ftemp=0;
+	float* new_v0=NULL;
 	float** pca_buff=NULL;	
 	float** prc_data;
 	prc_data = malloc(5*sizeof(float*));
 	for(i=0;i<5;i++){
 		prc_data[i] = malloc(flen * sizeof(float));
+		for(j=0;j<flen;j++){
+			prc_data[i][j] = 0;
+		}
 	}
 
 	fd1 = fopen(src_path, "r");
@@ -641,7 +646,7 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
 					prc_data[i][temp] = data[i][temp]/ftemp;
 				}
 				else if(count==2){
-					prc_data[i][temp] = data[i][temp]-ftemp;
+					prc_data[i][temp] = prc_data[i][temp]-ftemp;
 				}
 			}
 			temp++;
@@ -658,12 +663,18 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
 		printf("Error: num_pca incorrect\n");
 		return -1;
 	}
+	new_v0 = malloc(npca*sizeof(float));
+	for(j=0;j<npca;j++){
+		new_v0[j] = 0;
+	}
 	pca_buff = malloc(5*sizeof(float*));
 	for(i=0;i<5;i++){
 		pca_buff[i] = malloc(npca*sizeof(float));
+		for(j=0;j<npca;j++){
+			pca_buff[i][j] = 0;
+		}
 	}
 	for(i=0;i<npca;i++){
-		//pca_buff[i]=0;
 		read = getline(&line, &len, fd1);
 		if(read==-1){
 			printf("V_pca incomplete\n");
@@ -687,7 +698,10 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
 	while( count<3 && (read = getline(&line, &len, fd1))!= -3 ){
 		count++;
 		// copy each line
-		if (count==2){
+		if (count==1){
+			printf("get v_0:%s\n", line);
+		}
+		else if (count==2){
 			base = atof(line);
 			printf("get base %f\n", base);
 		}
@@ -701,10 +715,46 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
 		return -1;
 	}
 	
-	// calculate the new value from prcessed data in pca_buff[5][npca]
-	for(i=0;i<5;i++){
-		//temp_sum
+	// calculate the new v_0 and variance from prcessed data in pca_buff[5][npca]
+	if(DEBUG){
+		for(i=0;i<5;i++){
+			for(j=0;j<npca;j++){
+				printf("[%f]", pca_buff[i][j]);
+			}
+			printf("\n");
+		}
 	}
+	for(i=0;i<5;i++){
+		for(j=0;j<npca;j++){
+			new_v0[j]+=pca_buff[i][j]/5;
+		}
+	}
+	// write new v0
+	temp = 0;
+	offset = 0;
+	for(i=0;i<npca;i++){
+		temp = sprintf(str+offset, "%f ", new_v0[i]);
+		if(temp<0){
+			printf("Buffering error\n");
+			return -1;
+		}
+		offset+=temp;
+	}
+	sprintf(str+offset, "\n");
+	fwrite(str, sizeof(char), strlen(str), fd2);
+	// calculate base distance
+	for(i=0;i<5;i++){
+		for(j=0;j<npca;j++){
+			ftemp = (new_v0[j] - pca_buff[i][j])/5;
+			new_base += (ftemp>=0) ? ftemp:-ftemp;
+		}
+	}
+	sprintf(str, "%f\n", new_base);
+	fwrite(str, sizeof(char), strlen(str), fd2);
+	// adjust unit_d based on the ratio of bases		
+	unit_d = unit_d * new_base/base;	
+	sprintf(str, "%f\n", unit_d);
+	fwrite(str, sizeof(char), strlen(str), fd2);
 
 
 	printf("Update complete.\n");
@@ -720,6 +770,9 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
 		}
 		free(pca_buff);
 	}
+	if(new_v0!=NULL){
+		free(new_v0);
+	}
 
 	return 0;
 }
@@ -734,6 +787,8 @@ int main(int argc, char* argv[])
 	int label = -1;
 	int i=0, j=0;
 	float res = 0;
+	float res_old = 0;
+	float res_new = 0;
 	int flag=0;
 	float output_buff[PRC_SIZE] = {0};
 	float recal_buff[5][PRC_SIZE] = {0};
@@ -755,14 +810,13 @@ int main(int argc, char* argv[])
 
 	/* Start playback */
 	//Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
-	/*
+	
 	for(i=0;i<5;i++){
-		Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
-		sleep(1);
 		Presence_record(100, buffer_AIN_2, tone_output[i]);
-		sleep(DELAY);
-	}*/
-	//res = Presence_detect(tone_output, 10, 0.008, 0.008);
+		sleep(1);
+	}
+	res = Presence_detect(tone_output, 10, 0.008, 0.008);
+	printf("Presence decision:%f\n", res);
 	
 	//if constantly empty, recalibrate the model
 	if (res==0){
@@ -775,13 +829,18 @@ int main(int argc, char* argv[])
 		}
 		Recal(model_path, temp_model_path, FSIZE, recal_buff);
 	}
-	
-	printf("Presence decision:%f\n", res);
+		
 	/*Load model if existed and then estimate occupancy*/
-	res = Occ_est(model_path, FSIZE, output_buff, 0.5);
-	printf("Occupancy: %f\n", res);
-	res = Occ_est(temp_model_path, FSIZE, output_buff, 0.5);
-	printf("Recalibrated Occupancy: %f\n", res);
+	//Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
+	Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
+	for(i=0;i<5;i++){
+		Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
+		sleep(1);
+		res_old += Occ_est(model_path, FSIZE, output_buff, 0.5);
+		res_new += Occ_est(temp_model_path, FSIZE, output_buff, 0.5);
+	}
+	printf("[OLD]Occupancy: %f\n", res_old/5);
+	printf("[NEW]Occupancy: %f\n", res_new/5);
 		
 	/*clean up*/
 	BBB_free();
