@@ -36,10 +36,17 @@
 #define TONE_DELAY 192 //0.001*FS
 #define TONE_PRC_SIZE 17 //calculated like PRC_WSIZE 
 #define DELAY	2
+#define ENERGY_THRES	0.007
+#define SPEC_THRES	0.007
 
 //For debugging
 #define DEBUG	0
-#define RECAL	1
+#define RECAL	0
+int compare (const void *a, const void *b){
+	float fa = *(const float*)a;
+	float fb = *(const float*)b;
+	return (fa > fb) - (fa < fb);
+}
 float Occ_est(char* path, int flen, float* data, float weight){
 	int i, j;
 	/*Load the model from path*/
@@ -787,8 +794,8 @@ int main(int argc, char* argv[])
 	int label = -1;
 	int i=0, j=0;
 	float res_pre = 0;
-	float res_old = 0;
-	float res_new = 0;
+	float res_old[5] = {0};
+	float res_new[5] = {0};
 	int flag=0;
 	float output_buff[PRC_SIZE] = {0};
 	float recal_buff[5][PRC_SIZE] = {0};
@@ -817,7 +824,7 @@ int main(int argc, char* argv[])
 		Presence_record(100, buffer_AIN_2, tone_output[i]);
 		sleep(1);
 	}
-	res_pre = Presence_detect(tone_output, 10, 0.008, 0.008);
+	res_pre = Presence_detect(tone_output, 10, SPEC_THRES, ENERGY_THRES);
 	printf("*** [1]Presence decision:%f\n", res_pre);
 	
 	/*Load model if existed and then estimate occupancy*/
@@ -826,11 +833,14 @@ int main(int argc, char* argv[])
 	for(i=0;i<5;i++){
 		Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
 		sleep(1);
-		res_old += Occ_est(model_path, FSIZE, output_buff, 0.5);
-		res_new += Occ_est(temp_model_path, FSIZE, output_buff, 0.5);
+		res_old[i] = Occ_est(model_path, FSIZE, output_buff, 0.5);
+		res_new[i] = Occ_est(temp_model_path, FSIZE, output_buff, 0.5);
 	}
-	printf("*** [OLD]Occupancy: %f\n", res_old/5);
-	printf("*** [NEW]Occupancy: %f\n", res_new/5);
+	qsort(res_old, 5, sizeof(float), compare);	
+	qsort(res_new, 5, sizeof(float), compare);	
+	
+	printf("*** [OLD]Occupancy: %f\n", res_old[2]);
+	printf("*** [NEW]Occupancy: %f\n", res_new[2]);
 			
 
 	//if empty, test again
@@ -839,7 +849,7 @@ int main(int argc, char* argv[])
 			Presence_record(100, buffer_AIN_2, tone_output[i]);
 			sleep(1);
 		}
-		res_pre = Presence_detect(tone_output, 10, 0.008, 0.008);
+		res_pre = Presence_detect(tone_output, 10, SPEC_THRES, ENERGY_THRES);
 		printf("*** [2]Presence decision:%f\n", res_pre);
 		// recalibrate if both are detected as empty 
 		if (res_pre==0 || RECAL){
