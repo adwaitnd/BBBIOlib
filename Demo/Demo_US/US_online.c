@@ -39,7 +39,7 @@
 
 //For debugging
 #define DEBUG	0
-
+#define RECAL	1
 float Occ_est(char* path, int flen, float* data, float weight){
 	int i, j;
 	/*Load the model from path*/
@@ -808,6 +808,8 @@ int main(int argc, char* argv[])
 
 	BBB_init(buffer_AIN_2);
 
+	//warm up
+	Playback_record(1, label, vol, buffer_AIN_2, output_buff);
 	/* Start playback */
 	//Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
 	
@@ -829,10 +831,10 @@ int main(int argc, char* argv[])
 	}
 	printf("*** [OLD]Occupancy: %f\n", res_old/5);
 	printf("*** [NEW]Occupancy: %f\n", res_new/5);
-		
+			
 
 	//if empty, test again
-	if (res_pre==0){
+	if (res_pre==0 || RECAL){
 		for(i=0;i<5;i++){
 			Presence_record(100, buffer_AIN_2, tone_output[i]);
 			sleep(1);
@@ -840,7 +842,7 @@ int main(int argc, char* argv[])
 		res_pre = Presence_detect(tone_output, 10, 0.008, 0.008);
 		printf("*** [2]Presence decision:%f\n", res_pre);
 		// recalibrate if both are detected as empty 
-		if (res_pre==0){
+		if (res_pre==0 || RECAL){
 			// Recalibration 
 			printf("*** Start recalibration ...\n");
 			// collect some new data
