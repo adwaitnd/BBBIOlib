@@ -67,7 +67,7 @@ float Occ_est(char* path, int flen, float* data, float weight){
 	[v_norm, v_mean, num_pca, v_pca, v_0, base, unit_d]
 	Estmation = (abs((data/v_norm - v_mean)*v_pca*weight - v_0) - base)/unit_d
 	*/
-	printf("Reading model at: %s\n", path);
+	printf("Reading model at %s\n", path);
 	fd = fopen(path, "r");
 	if(fd==NULL){
 		printf("Model not found\n");
@@ -429,7 +429,7 @@ int Presence_record(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* outp
 	}
 	write(fd, vol_buff, 2);
 	usleep(500000);
-	printf("Fire in the hole!\n");
+	//printf("Fire in the hole!\n");
 	// Fire the chirp!
 	write(fd, "t", 1);
 	usleep(1000);
@@ -441,7 +441,7 @@ int Presence_record(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* outp
 	/* Start capture */
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
 	BBBIO_ADCTSC_work(TONE_SAMPLE_SIZE+WLEN);
-	printf("Recording done.\n");
+	//printf("Recording done.\n");
 
 	/* Preprocessing */
 	// copy and convert to float
@@ -530,7 +530,7 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	}
 	write(fd, vol_buff, 2);
 	usleep(500000);
-	printf("Fire in the hole!\n");
+	//printf("Fire in the hole!\n");
 	// Fire the chirp!
 	write(fd, "f", 1);
 	usleep(1000);
@@ -542,7 +542,7 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	/* Start capture */
 	BBBIO_ADCTSC_channel_enable(BBBIO_ADC_AIN2);
 	BBBIO_ADCTSC_work(SAMPLE_SIZE);
-	printf("Recording done.\n");
+	//printf("Recording done.\n");
 
 	/* If warmup then we are done*/
 	if(flag==1){
@@ -569,7 +569,7 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 		}
 	}
 	//Prep_fft(input_pt, FS, START_F-(EX_BAND/2), END_F+(EX_BAND/2), prc_pt);	
-	printf("Preprocessing done\n");
+	//printf("Preprocessing done\n");
 	/* Save data to files*/
 	// format file name
 	strftime(data_file_name, sizeof(data_file_name), "data/%Y-%m-%d_%H:%M:%S-", localtime(&rawtime));
@@ -764,7 +764,7 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
 	fwrite(str, sizeof(char), strlen(str), fd2);
 
 
-	printf("Update complete.\n");
+	printf("*** Update complete.\n");
 	fclose(fd1);
 	fclose(fd2);
 	for(i=0;i<5;i++){
@@ -817,7 +817,7 @@ int main(int argc, char* argv[])
 
 	//warm up
 	Playback_record(1, label, vol, buffer_AIN_2, output_buff);
-	/* Start playback */
+	 /* Start playback */
 	//Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
 	
 	for(i=0;i<5;i++){
@@ -825,7 +825,7 @@ int main(int argc, char* argv[])
 		sleep(1);
 	}
 	res_pre = Presence_detect(tone_output, 10, SPEC_THRES, ENERGY_THRES);
-	printf("*** [1]Presence decision:%f\n", res_pre);
+	printf("*** Presence decision [1]:%f\n", res_pre);
 	
 	/*Load model if existed and then estimate occupancy*/
 	//Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
@@ -850,7 +850,7 @@ int main(int argc, char* argv[])
 			sleep(1);
 		}
 		res_pre = Presence_detect(tone_output, 10, SPEC_THRES, ENERGY_THRES);
-		printf("*** [2]Presence decision:%f\n", res_pre);
+		printf("*** Presence decision [2]:%f\n", res_pre);
 		// recalibrate if both are detected as empty 
 		if (res_pre==0 || RECAL){
 			// Recalibration 
