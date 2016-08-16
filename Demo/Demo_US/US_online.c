@@ -36,8 +36,8 @@
 #define TONE_DELAY 192 //0.001*FS
 #define TONE_PRC_SIZE 17 //calculated like PRC_WSIZE 
 #define DELAY	2
-#define ENERGY_THRES	0.007
-#define SPEC_THRES	0.007
+#define ENERGY_THRES	0.0004
+#define SPEC_THRES	0.005
 
 //For debugging
 #define DEBUG	0
@@ -748,15 +748,18 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
 		offset+=temp;
 	}
 	sprintf(str+offset, "\n");
+	printf("New v_0:%s\n", str);
 	fwrite(str, sizeof(char), strlen(str), fd2);
 	// calculate base distance
+	new_base = 0;
 	for(i=0;i<5;i++){
 		for(j=0;j<npca;j++){
 			ftemp = (new_v0[j] - pca_buff[i][j])/5;
-			new_base += (ftemp>=0) ? ftemp:-ftemp;
+			new_base += (ftemp>=0) ? ftemp:-1*ftemp;
 		}
 	}
 	sprintf(str, "%f\n", new_base);
+	printf("New base:%s\n", str);
 	fwrite(str, sizeof(char), strlen(str), fd2);
 	// adjust unit_d based on the ratio of bases		
 	unit_d = unit_d * new_base/base;	
@@ -780,6 +783,9 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
 	if(new_v0!=NULL){
 		free(new_v0);
 	}
+	
+	//rename 
+	temp = rename(tar_path, src_path);
 
 	return 0;
 }
@@ -834,13 +840,13 @@ int main(int argc, char* argv[])
 		Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
 		sleep(1);
 		res_old[i] = Occ_est(model_path, FSIZE, output_buff, 0.5);
-		res_new[i] = Occ_est(temp_model_path, FSIZE, output_buff, 0.5);
+		//res_new[i] = Occ_est(temp_model_path, FSIZE, output_buff, 0.5);
 	}
 	qsort(res_old, 5, sizeof(float), compare);	
-	qsort(res_new, 5, sizeof(float), compare);	
+	//qsort(res_new, 5, sizeof(float), compare);	
 	
-	printf("*** [OLD]Occupancy: %f\n", res_old[2]);
-	printf("*** [NEW]Occupancy: %f\n", res_new[2]);
+	printf("*** Occupancy: %f\n", res_old[2]);
+	//printf("*** [NEW]Occupancy: %f\n", res_new[2]);
 			
 
 	//if empty, test again
