@@ -603,7 +603,7 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	return 0;
 }
 
-int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
+int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int label){
 	// The model should have the following format: 
 	// [v_norm, v_mean, num_pca, v_pca, v_0, base, unit_d]
 	// The function updates only the v_0, base, and unit_d
@@ -621,6 +621,7 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
 	float new_base = 0;
 	float unit_d;
 	float ftemp=0;
+	float fres=0;
 	float* new_v0=NULL;
 	float** pca_buff=NULL;	
 	float** prc_data;
@@ -702,70 +703,117 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE]){
 		}
 	}
 	
-	while( count<3 && (read = getline(&line, &len, fd1))!= -3 ){
-		count++;
-		// copy each line
-		if (count==1){
-			printf("get v_0:%s\n", line);
-		}
-		else if (count==2){
-			base = atof(line);
-			printf("get base %f\n", base);
-		}
-		else if (count==3){
-			unit_d = atof(line);
-			printf("get unit_d %f\n", unit_d);
-		}
-	}
-	if(count<3){
-		printf("Error: model incomplete\n");
-		return -1;
-	}
-	
-	// calculate the new v_0 and variance from prcessed data in pca_buff[5][npca]
-	if(DEBUG){
-		for(i=0;i<5;i++){
-			for(j=0;j<npca;j++){
-				printf("[%f]", pca_buff[i][j]);
+	// Two scenarios here:
+	// [1]: If forced to recalibrate with label, we just need to recalibrate the unit_d
+	if(RECAL && label>0){
+		while( count<3 && (read = getline(&line, &len, fd1))!= -3 ){
+			count++;
+			// copy each line
+			if (count==1){
+				printf("get v_0:%s\n", line);
+				fwrite(line, sizeof(char), strlen(line), fd2);
+				temp = 0;
+				d  = strtok(line, " ");
+				while(d!=NULL){
+					ftemp = atof(d);
+					for(i=0;i<5;i++){
+						ftemp = (pca_buff[i][temp] - ftemp)/5;
+						fres += (ftemp>=0) ? ftemp:-1*ftemp; 
+					}
+					temp++;
+					d = strtok(NULL, " ");
+				}
 			}
-			printf("\n");
+			else if (count==2){
+				base = atof(line);
+				printf("get base %f\n", base);
+				fwrite(line, sizeof(char), strlen(line), fd2);
+			}
+			else if (count==3){
+				unit_d = atof(line);
+				printf("get unit_d %f\n", unit_d);
+			}
 		}
-	}
-	for(i=0;i<5;i++){
-		for(j=0;j<npca;j++){
-			new_v0[j]+=pca_buff[i][j]/5;
-		}
-	}
-	// write new v0
-	temp = 0;
-	offset = 0;
-	for(i=0;i<npca;i++){
-		temp = sprintf(str+offset, "%f ", new_v0[i]);
-		if(temp<0){
-			printf("Buffering error\n");
+		if(count<3){
+			printf("Error: model incomplete\n");
 			return -1;
 		}
-		offset+=temp;
-	}
-	sprintf(str+offset, "\n");
-	printf("New v_0:%s\n", str);
-	fwrite(str, sizeof(char), strlen(str), fd2);
-	// calculate base distance
-	new_base = 0;
-	for(i=0;i<5;i++){
-		for(j=0;j<npca;j++){
-			ftemp = (new_v0[j] - pca_buff[i][j])/5;
-			new_base += (ftemp>=0) ? ftemp:-1*ftemp;
+		// Recalculate the unit_d
+		if(fres-base>=0){
+			sprintf(str, "%f\n", (fres-base)/label);
+			printf("New unit_d:%s", str);
+			fwrite(str, sizeof(char), strlen(str), fd2);
+		}
+		else{
+			printf("Unit_d less than 0, abort recalibration ...\n");
+			fwrite(line, sizeof(char), strlen(line), fd2);
 		}
 	}
-	sprintf(str, "%f\n", new_base);
-	printf("New base:%s\n", str);
-	fwrite(str, sizeof(char), strlen(str), fd2);
-	// adjust unit_d based on the ratio of bases		
-	unit_d = unit_d * new_base/base;	
-	sprintf(str, "%f\n", unit_d);
-	fwrite(str, sizeof(char), strlen(str), fd2);
-
+	else{
+	// [2]: Otherwise we calculate the new v_0 and variance from prcessed data in pca_buff[5][npca], and then update unit_d
+		while( count<3 && (read = getline(&line, &len, fd1))!= -3 ){
+			count++;
+			// copy each line
+			if (count==1){
+				printf("get v_0:%s", line);
+			}
+			else if (count==2){
+				base = atof(line);
+				printf("get base %f\n", base);
+			}
+			else if (count==3){
+				unit_d = atof(line);
+				printf("get unit_d %f\n", unit_d);
+			}
+		}
+		if(count<3){
+			printf("Error: model incomplete\n");
+			return -1;
+		}
+		if(DEBUG){
+			for(i=0;i<5;i++){
+				for(j=0;j<npca;j++){
+					printf("[%f]", pca_buff[i][j]);
+				}
+				printf("\n");
+			}
+		}
+		for(i=0;i<5;i++){
+			for(j=0;j<npca;j++){
+				new_v0[j]+=pca_buff[i][j]/5;
+			}
+		}
+		// write new v0
+		temp = 0;
+		offset = 0;
+		for(i=0;i<npca;i++){
+			temp = sprintf(str+offset, "%f ", new_v0[i]);
+			if(temp<0){
+				printf("Buffering error\n");
+				return -1;
+			}
+			offset+=temp;
+		}
+		sprintf(str+offset, "\n");
+		printf("New v_0:%s", str);
+		fwrite(str, sizeof(char), strlen(str), fd2);
+		// calculate base distance
+		new_base = 0;
+		for(i=0;i<5;i++){
+			for(j=0;j<npca;j++){
+				ftemp = (new_v0[j] - pca_buff[i][j])/5;
+				new_base += (ftemp>=0) ? ftemp:-1*ftemp;
+			}
+		}
+		sprintf(str, "%f\n", new_base);
+		printf("New base:%s", str);
+		fwrite(str, sizeof(char), strlen(str), fd2);
+		// adjust unit_d based on the ratio of bases		
+		unit_d = unit_d * new_base/base;	
+		sprintf(str, "%f\n", unit_d);
+		printf("New unit_d:%s", str);
+		fwrite(str, sizeof(char), strlen(str), fd2);
+	}
 
 	printf("*** Update complete.\n");
 	fclose(fd1);
@@ -866,7 +914,7 @@ int main(int argc, char* argv[])
 				Playback_record(flag, label, vol, buffer_AIN_2, recal_buff[i]);
 				sleep(1);
 			}
-			Recal(model_path, temp_model_path, FSIZE, recal_buff);
+			Recal(model_path, temp_model_path, FSIZE, recal_buff, label);
 		}
 	}
 
