@@ -36,12 +36,13 @@
 #define TONE_DELAY 192 //0.001*FS
 #define TONE_PRC_SIZE 17 //calculated like PRC_WSIZE 
 #define DELAY	2
-#define ENERGY_THRES	0.0004
+#define ENERGY_THRES	0.005
 #define SPEC_THRES	0.005
 
 //For debugging
 #define DEBUG	0
-#define RECAL	0
+
+int RECAL = 0;
 int compare (const void *a, const void *b){
 	float fa = *(const float*)a;
 	float fb = *(const float*)b;
@@ -400,7 +401,7 @@ int Presence_record(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* outp
 	input_pt->canFreeData = false;	
 
 	/* Start playback */
-	printf("Starting capture with rate %d ...\n", SAMPLE_SIZE);
+	printf("[Pre] Starting capture with rate %d ...\n", SAMPLE_SIZE);
 	// get time
 	time(&rawtime);
 	//Open uart
@@ -501,7 +502,7 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	input_pt->canFreeData = false;	
 
 	/* Start playback */
-	printf("Starting capture with rate %d ...\n", SAMPLE_SIZE);
+	printf("[Occ] Starting capture with rate %d ...\n", SAMPLE_SIZE);
 	// get time
 	time(&rawtime);
 	//Open uart
@@ -705,12 +706,12 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 	
 	// Two scenarios here:
 	// [1]: If forced to recalibrate with label, we just need to recalibrate the unit_d
-	if(RECAL && label>0){
+	if(RECAL==1 && label>0){
 		while( count<3 && (read = getline(&line, &len, fd1))!= -3 ){
 			count++;
 			// copy each line
 			if (count==1){
-				printf("get v_0:%s\n", line);
+				printf("get v_0:%s", line);
 				fwrite(line, sizeof(char), strlen(line), fd2);
 				temp = 0;
 				d  = strtok(line, " ");
@@ -854,17 +855,26 @@ int main(int argc, char* argv[])
 	float output_buff[PRC_SIZE] = {0};
 	float recal_buff[5][PRC_SIZE] = {0};
 	float tone_output[5][TONE_PRC_SIZE] = {0};
-	if(argc>=2){
-		vol = atoi(argv[1]);
-		if(vol==0){
-			flag=1; //for warmup
+	int c;
+	while ((c = getopt (argc, argv, "v:n:r")) != -1){
+    		switch(c){
+			case 'v':
+				vol = atoi(optarg);
+				printf("Setting vol=%d\n", vol);
+				break;
+			case 'n':	
+				label = atoi(optarg);
+				printf("Setting label=%d\n", label);
+				break;
+     			case 'r':
+        			RECAL = 1;
+				printf("Forced recalibration detected\n", label);
+				break;
+			defualt:
+				printf("Usage:./US_online [-v vol] [-n label] [-r]\n");
+				return -1;
+				break;
 		}
-		if(argc==3){
-			label = atoi(argv[2]);
-		}
-	}
-	else{
-		printf("Usage:./US_online [volume*] [label]\n");
 	}
 
 	BBB_init(buffer_AIN_2);
