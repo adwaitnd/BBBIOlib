@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PERIOD=60
+PERIOD=10
 #DELAY=2
 #LOCATION=SCAIF
 
@@ -27,7 +27,9 @@ do
 	sudo sh -c "echo 'BB-UART5' > /sys/devices/platform/bone_capemgr/slots"		
   fi
   # Start data collection 
-  chrt -f 99 ./US_online.out 100
+  DATE=$(date +"%Y-%m-%d_%H:%M:%S")
+  streamer -f jpeg -o data/$DATE.jpeg	
+  chrt -f 99 ./US_online.out -v 100
   # Take some rest
   echo "Wait for next round in $PERIOD(s) ..."
   sleep $PERIOD

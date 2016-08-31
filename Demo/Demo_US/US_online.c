@@ -454,19 +454,6 @@ int Presence_record(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* outp
 		output_buff[i] = local_buff[i];
 		//printf("[%f] ", local_buff[i]);
 	}
-	/*	
-	file_fd = fopen("raw_data.txt","w");	// open file in write mode
-	for(j = 0 ; j < TONE_SAMPLE_SIZE-TONE_DELAY ; j++){
-			fprintf(file_fd, "%f\n", input[j] );
-	}
-	fclose(file_fd);
-	
-	file_fd = fopen("prc_data.txt","w");	// open file in write mode
-	for(j = 0 ; j < TONE_PRC_SIZE ; j++){
-			fprintf(file_fd, "%f\n", output_buff[j] );
-	}
-	fclose(file_fd);
-	*/	
 	
 	return 0;
 }
@@ -545,11 +532,6 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	BBBIO_ADCTSC_work(SAMPLE_SIZE);
 	//printf("Recording done.\n");
 
-	/* If warmup then we are done*/
-	if(flag==1){
-		return 0;
-	}	 
-
 	/* Preprocessing */
 	// copy and convert to float
 	for(i=0;i<BUFFER_SIZE;i++){
@@ -569,8 +551,13 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 			//printf("output[%d] = %f\n", j+i*PRC_WSIZE, output_buff[j+i*PRC_WSIZE]);
 		}
 	}
-	//Prep_fft(input_pt, FS, START_F-(EX_BAND/2), END_F+(EX_BAND/2), prc_pt);	
+
+	/* If warmup then we are done*/
+	if(flag==1){
+		return 0;
+	}	 
 	//printf("Preprocessing done\n");
+
 	/* Save data to files*/
 	// format file name
 	strftime(data_file_name, sizeof(data_file_name), "data/%Y-%m-%d_%H:%M:%S-", localtime(&rawtime));
@@ -892,8 +879,7 @@ int main(int argc, char* argv[])
 	printf("*** Presence decision [1]:%f\n", res_pre);
 	
 	/*Load model if existed and then estimate occupancy*/
-	//Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
-	Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
+	Playback_record(1, label, vol, buffer_AIN_2, output_buff);
 	for(i=0;i<5;i++){
 		Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
 		sleep(1);

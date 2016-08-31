@@ -36,7 +36,7 @@ do
   ## Warm up the transformer
   DATE=$(date +"%Y-%m-%d_%H:%M:%S")
   streamer -f jpeg -o data/$DATE.jpeg	
-  chrt -f 99 ./US_online.out 100
+  chrt -f 99 ./US_online.out -v 100
   #DATE=$(date +"%Y-%m-%d_%H:%M:%S")
   #streamer -f jpeg -o data/$DATE.jpeg	
 
