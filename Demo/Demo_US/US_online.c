@@ -243,7 +243,6 @@ int BBB_init(unsigned int* buffer_AIN_2){
 	/*ADC work mode : Busy polling mode  */
 	/* BBBIO_ADCTSC_module_ctrl(BBBIO_ADC_WORK_MODE_BUSY_POLLING, clk_div);*/
 
-
 	// microphone is connected to AIN2
 	BBBIO_ADCTSC_channel_ctrl(BBBIO_ADC_AIN2, BBBIO_ADC_STEP_MODE_SW_CONTINUOUS, open_dly, sample_dly, \
 				BBBIO_ADC_STEP_AVG_1, buffer_AIN_2, BUFFER_SIZE);
@@ -297,21 +296,7 @@ int Presence_detect(float input[5][TONE_PRC_SIZE], float dop_thres, float freq_t
 	time(&rawtime);
 	strftime(data_file_name, sizeof(data_file_name), "data/%Y-%m-%d_%H:%M:%S-presence.dat", localtime(&rawtime));
 	printf("In detect:\n");
-	/*
-	for(i=0;i<5;i++){
-		for(j=0;j<TONE_PRC_SIZE;j++){
-			printf("[%f] ", input[i][j]);
-		}
-		printf("\n");
-	}
-	for(i=0;i<5;i++){
-		for(j=0;j<TONE_PRC_SIZE;j++){
-			if(input[i][j]>temp_max){
-				temp_max= input[i][j];
-			}
-		}
-	}
-	*/
+
 	//Normalize
 	for(i=0;i<5;i++){
 		for(j=0;j<TONE_PRC_SIZE;j++){
@@ -375,8 +360,6 @@ int Presence_detect(float input[5][TONE_PRC_SIZE], float dop_thres, float freq_t
 int Presence_record(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* output_buff){
 	
 	time_t rawtime;
-	//char data_file_name[128];
-	//char raw_data_name[128];
 	int fd, i=0, j=0, local_size=TONE_PRC_SIZE, wsize = TONE_SAMPLE_SIZE-TONE_DELAY;
 	struct termios old, uart_set;	
 	char vol_buff[3]="vU"; // default v=85
@@ -401,7 +384,7 @@ int Presence_record(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* outp
 	input_pt->canFreeData = false;	
 
 	/* Start playback */
-	printf("[Pre] Starting capture with rate %d ...\n", SAMPLE_SIZE);
+	printf("[Pre] Starting collecting at rate %d ...\n", SAMPLE_SIZE);
 	// get time
 	time(&rawtime);
 	//Open uart
@@ -489,7 +472,7 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	input_pt->canFreeData = false;	
 
 	/* Start playback */
-	printf("[Occ] Starting capture with rate %d ...\n", SAMPLE_SIZE);
+	printf("[Occ] Start collecting at rate %d ...\n", SAMPLE_SIZE);
 	// get time
 	time(&rawtime);
 	//Open uart
@@ -537,9 +520,6 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	for(i=0;i<BUFFER_SIZE;i++){
 		input[i] = (float)buffer_AIN_2[i];
 	} 
-	//for(i=0;i<BUFFER_SIZE;i++){
-	//	printf("Get %f\n", input[i]);
-	//}
 	/* FFT the segmented raw data based on window size*/
 	for(i=0;i<WNUM;i++){ 
 		input_pt->data = (float*)&(input[(i+1)*wsize]); //ignore the first window since its crosstalk
@@ -847,11 +827,11 @@ int main(int argc, char* argv[])
     		switch(c){
 			case 'v':
 				vol = atoi(optarg);
-				printf("Setting vol=%d\n", vol);
+				printf("Set vol=%d\n", vol);
 				break;
 			case 'n':	
 				label = atoi(optarg);
-				printf("Setting label=%d\n", label);
+				printf("Set label=%d\n", label);
 				break;
      			case 'r':
         			RECAL = 1;
@@ -868,15 +848,14 @@ int main(int argc, char* argv[])
 
 	//warm up
 	Playback_record(1, label, vol, buffer_AIN_2, output_buff);
+
 	 /* Start playback */
-	//Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
-	
 	for(i=0;i<5;i++){
 		Presence_record(100, buffer_AIN_2, tone_output[i]);
 		sleep(1);
 	}
 	res_pre = Presence_detect(tone_output, 10, SPEC_THRES, ENERGY_THRES);
-	printf("*** Presence decision [1]:%f\n", res_pre);
+	printf("*** [1]Presence decision:%f\n", res_pre);
 	
 	/*Load model if existed and then estimate occupancy*/
 	Playback_record(1, label, vol, buffer_AIN_2, output_buff);
@@ -887,27 +866,23 @@ int main(int argc, char* argv[])
 		//res_new[i] = Occ_est(temp_model_path, FSIZE, output_buff, 0.5);
 	}
 	qsort(res_old, 5, sizeof(float), compare);	
-	//qsort(res_new, 5, sizeof(float), compare);	
-	
 	printf("*** Occupancy: %f\n", res_old[2]);
-	//printf("*** [NEW]Occupancy: %f\n", res_new[2]);
-			
 
-	//if empty, test again
-	if (res_pre==0 || RECAL){
+	//if empty and the estimation is higher than 0.5, test again
+	if ((res_pre==0 && res_old[2]>=0.5) || RECAL){
 		for(i=0;i<5;i++){
 			Presence_record(100, buffer_AIN_2, tone_output[i]);
 			sleep(1);
 		}
 		res_pre = Presence_detect(tone_output, 10, SPEC_THRES, ENERGY_THRES);
-		printf("*** Presence decision [2]:%f\n", res_pre);
+		printf("*** [2]Presence decision:%f\n", res_pre);
 		// recalibrate if both are detected as empty 
 		if (res_pre==0 || RECAL){
 			// Recalibration 
 			printf("*** Start recalibration ...\n");
 			// collect some new data
 			for(i=0;i<5;i++){
-				Playback_record(flag, label, vol, buffer_AIN_2, recal_buff[i]);
+				Playback_record(1, label, vol, buffer_AIN_2, recal_buff[i]);
 				sleep(1);
 			}
 			Recal(model_path, temp_model_path, FSIZE, recal_buff, label);
