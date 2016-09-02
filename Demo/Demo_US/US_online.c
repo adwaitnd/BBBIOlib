@@ -384,7 +384,7 @@ int Presence_record(int vol, unsigned int buffer_AIN_2[BUFFER_SIZE], float* outp
 	input_pt->canFreeData = false;	
 
 	/* Start playback */
-	printf("[Pre] Starting collecting at rate %d ...\n", SAMPLE_SIZE);
+	printf("[Pre] Start collecting at rate %d ...\n", SAMPLE_SIZE);
 	// get time
 	time(&rawtime);
 	//Open uart
