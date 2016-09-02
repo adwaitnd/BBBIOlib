@@ -571,6 +571,22 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	return 0;
 }
 
+int logger(float occ, int recal){
+	FILE* fd;
+	char buff[20];
+	fd = fopen("log.txt", "a");
+	if(fd==NULL){
+		printf("Logger open failed.\n");
+		return -1;
+	}	
+	sprintf(buff, "%f %d\n", occ, recal);
+	fwrite(buff, sizeof(char), strlen(buff), fd);
+	fclose(fd);
+	
+	return 0;
+}
+
+
 int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int label){
 	// The model should have the following format: 
 	// [v_norm, v_mean, num_pca, v_pca, v_0, base, unit_d]
@@ -818,10 +834,11 @@ int main(int argc, char* argv[])
 	float res_pre = 0;
 	float res_old[5] = {0};
 	float res_new[5] = {0};
-	int flag=0;
+	int flag=0, recal_flag=0;
 	float output_buff[PRC_SIZE] = {0};
 	float recal_buff[5][PRC_SIZE] = {0};
 	float tone_output[5][TONE_PRC_SIZE] = {0};
+	float occ=0;
 	int c;
 	while ((c = getopt (argc, argv, "v:n:r")) != -1){
     		switch(c){
@@ -866,10 +883,12 @@ int main(int argc, char* argv[])
 		//res_new[i] = Occ_est(temp_model_path, FSIZE, output_buff, 0.5);
 	}
 	qsort(res_old, 5, sizeof(float), compare);	
-	printf("*** Occupancy: %f\n", res_old[2]);
+	occ = res_old[2];
+	printf("*** Occupancy: %f\n", occ);
 
+	recal_flag=0;
 	//if empty and the estimation is higher than 0.5, test again
-	if ((res_pre==0 && res_old[2]>=0.5) || RECAL){
+	if ((res_pre==0 && occ>=0.5) || RECAL){
 		for(i=0;i<5;i++){
 			Presence_record(100, buffer_AIN_2, tone_output[i]);
 			sleep(1);
@@ -886,9 +905,11 @@ int main(int argc, char* argv[])
 				sleep(1);
 			}
 			Recal(model_path, temp_model_path, FSIZE, recal_buff, label);
+			recal_flag=1;
 		}
 	}
 
+	logger(occ, recal_flag);	
 
 	/*clean up*/
 	BBB_free();
