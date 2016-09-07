@@ -38,6 +38,7 @@
 #define DELAY	2
 #define ENERGY_THRES	0.005
 #define SPEC_THRES	0.005
+#define SAMPLES	5
 
 //For debugging
 #define DEBUG	0
@@ -282,11 +283,11 @@ float cal_std(float* input, float size){
 	return std_deviation;
 }
 
-int Presence_detect(float input[5][TONE_PRC_SIZE], float dop_thres, float freq_thres, float energy_thres){
+int Presence_detect(float input[SAMPLES][TONE_PRC_SIZE], float dop_thres, float freq_thres, float energy_thres){
 	int i=0, j=0, res=-1;
 	//float temp_max[TONE_PRC_SIZE]={0};
 	float temp_max = 0;
-	float temp_data[5] = {0};
+	float temp_data[SAMPLES] = {0};
 	float sum=0;
 	float dop=0, freq=0, energy=0;
 	time_t rawtime;
@@ -299,21 +300,21 @@ int Presence_detect(float input[5][TONE_PRC_SIZE], float dop_thres, float freq_t
 	printf("In detect:\n");
 
 	//Normalize
-	for(i=0;i<5;i++){
+	for(i=0;i<SAMPLES;i++){
 		for(j=0;j<TONE_PRC_SIZE;j++){
 			temp_data[i]+=input[i][j];
 		}
 	}
-	for(i=0;i<5;i++){
+	for(i=0;i<SAMPLES;i++){
 		if(temp_data[i]>temp_max){
 			temp_max = temp_data[i];
 		}
 	}
-	for(i=0;i<5;i++){
+	for(i=0;i<SAMPLES;i++){
 		temp_data[i] = temp_data[i]/temp_max;
 	}
 	
-	for(i=0;i<5;i++){
+	for(i=0;i<SAMPLES;i++){
 		for(j=0;j<TONE_PRC_SIZE;j++){
 			input[i][j] = input[i][j]/temp_max;
 			//printf("[%f] ", input[i][j]);
@@ -322,15 +323,15 @@ int Presence_detect(float input[5][TONE_PRC_SIZE], float dop_thres, float freq_t
 	}
 	
 	//Cal var of energy 
-	energy = pow(cal_std(temp_data, 5),2);
+	energy = pow(cal_std(temp_data, SAMPLES),2);
 	printf("Get mean energy var %f\n", energy);
 	//Cal Doppler
 	//Cal var of freq 
 	for(i=0;i<TONE_PRC_SIZE;i++){
-		for(j=0;j<5;j++){
+		for(j=0;j<SAMPLES;j++){
 			temp_data[j] = input[j][i];
 		}	
-		sum += cal_std(temp_data, 5);	
+		sum += cal_std(temp_data, SAMPLES);	
 	}
 	freq = sum / (float)TONE_PRC_SIZE;	
 	printf("Get mean std %f\n", freq);
@@ -342,7 +343,7 @@ int Presence_detect(float input[5][TONE_PRC_SIZE], float dop_thres, float freq_t
 
 	// Write to file 	
 	file_fd = fopen(data_file_name,"w");	// open file in write mode
-	for(i=0;i<5;i++){
+	for(i=0;i<SAMPLES;i++){
 		for(j=0;j<TONE_PRC_SIZE;j++){
 			fprintf(file_fd, "%f ", input[i][j]);
 		}	
@@ -588,7 +589,7 @@ int logger(float occ, int recal){
 }
 
 
-int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int label){
+int Recal(char* src_path, char* tar_path, int flen, float data[SAMPLES][PRC_SIZE], int label){
 	// The model should have the following format: 
 	// [v_norm, v_mean, num_pca, v_pca, v_0, base, unit_d]
 	// The function updates only the v_0, base, and unit_d
@@ -613,15 +614,15 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 
 	if(DEBUG){
 		printf("[RECAL] Get prc data:\n");
-		for(i=0;i<5;i++){
+		for(i=0;i<SAMPLES;i++){
 			for(j=0;j<PRC_SIZE;j++){
 				printf("[%f] ", data[i][j]);
 			}
 			printf("\n");
 		}
 	}
-	prc_data = malloc(5*sizeof(float*));
-	for(i=0;i<5;i++){
+	prc_data = malloc(SAMPLES*sizeof(float*));
+	for(i=0;i<SAMPLES;i++){
 		prc_data[i] = malloc(flen * sizeof(float));
 		for(j=0;j<flen;j++){
 			prc_data[i][j] = 0;
@@ -644,7 +645,7 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 		d  = strtok(line, " ");
 		while(d!=NULL){
 			ftemp = atof(d);
-			for(i=0;i<5;i++){
+			for(i=0;i<SAMPLES;i++){
 				if(count==1){
 					prc_data[i][temp] = data[i][temp]/ftemp;
 				}
@@ -667,11 +668,11 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 		return -1;
 	}
 	new_v0 = malloc(npca*sizeof(float));
-	for(j=0;j<npca;j++){
-		new_v0[j] = 0;
+	for(i=0;i<npca;i++){
+		new_v0[i] = 0;
 	}
-	pca_buff = malloc(5*sizeof(float*));
-	for(i=0;i<5;i++){
+	pca_buff = malloc(SAMPLES*sizeof(float*));
+	for(i=0;i<SAMPLES;i++){
 		pca_buff[i] = malloc(npca*sizeof(float));
 		for(j=0;j<npca;j++){
 			pca_buff[i][j] = 0;
@@ -690,7 +691,7 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 		while(d!=NULL && temp<flen){
 			ftemp = atof(d);
 			//printf("[%f %f]", ftemp, res_buff[temp]);
-			for(j=0;j<5;j++){
+			for(j=0;j<SAMPLES;j++){
 				pca_buff[j][i] += prc_data[j][temp]*ftemp;
 			}
 			temp++;
@@ -711,7 +712,7 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 				d  = strtok(line, " ");
 				while(d!=NULL){
 					ftemp = atof(d);
-					for(i=0;i<5;i++){
+					for(i=0;i<SAMPLES;i++){
 						ftemp2 = (pca_buff[i][temp] - ftemp);
 						fres += (ftemp2>=0) ? ftemp2:-1*ftemp2; 
 					}
@@ -729,13 +730,12 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 				printf("get unit_d %f\n", unit_d);
 			}
 		}
-		// average over 5 samples
-		fres = fres/5;
+		// average over samples
+		fres = fres/SAMPLES;
 		if(count<3){
 			printf("Error: model incomplete\n");
 			return -1;
 		}
-		printf("Avg diff over 5 samples=%f\n", fres);
 		// Recalculate the unit_d
 		if(fres-base>=0){
 			sprintf(str, "%f\n", (fres-base)/label);
@@ -748,7 +748,7 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 		}
 	}
 	else{
-	// [2]: Otherwise we calculate the new v_0 and variance from prcessed data in pca_buff[5][npca], and then update unit_d
+	// [2]: Otherwise we calculate the new v_0 and variance from prcessed data in pca_buff[SAMPLES][npca], and then update unit_d
 		while( count<3 && (read = getline(&line, &len, fd1))!= -3 ){
 			count++;
 			// copy each line
@@ -769,16 +769,16 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 			return -1;
 		}
 		if(DEBUG){
-			for(i=0;i<5;i++){
+			for(i=0;i<SAMPLES;i++){
 				for(j=0;j<npca;j++){
 					printf("[%f]", pca_buff[i][j]);
 				}
 				printf("\n");
 			}
 		}
-		for(i=0;i<5;i++){
+		for(i=0;i<SAMPLES;i++){
 			for(j=0;j<npca;j++){
-				new_v0[j]+=pca_buff[i][j]/5;
+				new_v0[j]+=pca_buff[i][j]/SAMPLES;
 			}
 		}
 		// write new v0
@@ -797,9 +797,9 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 		fwrite(str, sizeof(char), strlen(str), fd2);
 		// calculate base distance
 		new_base = 0;
-		for(i=0;i<5;i++){
+		for(i=0;i<SAMPLES;i++){
 			for(j=0;j<npca;j++){
-				ftemp = (new_v0[j] - pca_buff[i][j])/5;
+				ftemp = (new_v0[j] - pca_buff[i][j])/SAMPLES;
 				new_base += (ftemp>=0) ? ftemp:-1*ftemp;
 			}
 		}
@@ -816,12 +816,12 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 	printf("*** Update complete.\n");
 	fclose(fd1);
 	fclose(fd2);
-	for(i=0;i<5;i++){
+	for(i=0;i<SAMPLES;i++){
 		free(prc_data[i]);
 	}
 	free(prc_data);
 	if(pca_buff!=NULL){
-		for(i=0;i<5;i++){
+		for(i=0;i<SAMPLES;i++){
 			free(pca_buff[i]);
 		}
 		free(pca_buff);
@@ -846,12 +846,11 @@ int main(int argc, char* argv[])
 	int label = -1;
 	int i=0, j=0;
 	float res_pre = 0;
-	float res_old[5] = {0};
-	float res_new[5] = {0};
+	float res_old[SAMPLES] = {0};
 	int flag=0, recal_flag=0;
 	float output_buff[PRC_SIZE] = {0};
-	float recal_buff[5][PRC_SIZE] = {0};
-	float tone_output[5][TONE_PRC_SIZE] = {0};
+	float recal_buff[SAMPLES][PRC_SIZE] = {0};
+	float tone_output[SAMPLES][TONE_PRC_SIZE] = {0};
 	float occ=0;
 	int c;
 	while ((c = getopt (argc, argv, "v:n:r")) != -1){
@@ -881,7 +880,7 @@ int main(int argc, char* argv[])
 	Playback_record(1, label, vol, buffer_AIN_2, output_buff);
 
 	 /* Start playback */
-	for(i=0;i<5;i++){
+	for(i=0;i<SAMPLES;i++){
 		Presence_record(100, buffer_AIN_2, tone_output[i]);
 		sleep(1);
 	}
@@ -891,20 +890,21 @@ int main(int argc, char* argv[])
 	/*Load model if existed and then estimate occupancy*/
 	Playback_record(1, label, vol, buffer_AIN_2, output_buff);
 	sleep(1);
-	for(i=0;i<5;i++){
-		Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
+	for(i=0;i<SAMPLES;i++){
+		//Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
+		//sleep(1);
+		//res_old[i] = Occ_est(model_path, FSIZE, output_buff, 0.5);
+		Playback_record(flag, label, vol, buffer_AIN_2, recal_buff[i]);
 		sleep(1);
-		res_old[i] = Occ_est(model_path, FSIZE, output_buff, 0.5);
-		//res_new[i] = Occ_est(temp_model_path, FSIZE, output_buff, 0.5);
+		res_old[i] = Occ_est(model_path, FSIZE, recal_buff[i], 0.5);
 	}
-	qsort(res_old, 5, sizeof(float), compare);	
+	qsort(res_old, SAMPLES, sizeof(float), compare);	
 	occ = res_old[2];
-	printf("*** Occupancy: %f\n", occ);
 
 	recal_flag=0;
 	//if empty and the estimation is higher than 0.5, test again
 	if ((res_pre==0 && occ>=0.5) || RECAL){
-		for(i=0;i<5;i++){
+		for(i=0;i<SAMPLES;i++){
 			Presence_record(100, buffer_AIN_2, tone_output[i]);
 			sleep(1);
 		}
@@ -914,16 +914,16 @@ int main(int argc, char* argv[])
 		if (res_pre==0 || RECAL){
 			// Recalibration 
 			printf("*** Start recalibration ...\n");
-			// collect some new data
-			for(i=0;i<5;i++){
-				Playback_record(1, label, vol, buffer_AIN_2, recal_buff[i]);
-				sleep(1);
-			}
 			Recal(model_path, temp_model_path, FSIZE, recal_buff, label);
 			recal_flag=1;
 		}
 	}
-
+	if(recal_flag){
+		printf("*** Occupancy: 0.00\n");
+	}
+	else{
+		printf("*** Occupancy: %f\n", occ);
+	}
 	logger(occ, recal_flag);	
 
 	/*clean up*/
