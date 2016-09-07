@@ -148,6 +148,7 @@ float Occ_est(char* path, int flen, float* data, float weight){
 	}
 	//TODO:multiply pca_buff by weight based on presence detection
 	if(DEBUG){	
+		printf("Projected data:\n");
 		for(i=0;i<npca;i++){
 			printf("%f ", pca_buff[i]);
 		}
@@ -165,10 +166,10 @@ float Occ_est(char* path, int flen, float* data, float weight){
 		//TODO: Check if too many features
 		ftemp = atof(d);
 		pca_buff[temp] = pca_buff[temp] - ftemp;
-		if(pca_buff[temp]<0){
-			pca_buff[temp] = -1*pca_buff[temp];
-		}
-		res += pca_buff[temp];
+		//if(pca_buff[temp]<0){
+		//	pca_buff[temp] = -1*pca_buff[temp];
+		//}
+		res += pca_buff[temp]>=0 ? pca_buff[temp]:-1*pca_buff[temp];
 		temp++;
 		d = strtok(NULL, " ");
 	}
@@ -181,8 +182,8 @@ float Occ_est(char* path, int flen, float* data, float weight){
 			printf("%f ", pca_buff[i]);
 		}
 		printf("End of PCA distance\n");
-		printf("RES=%f\n", res);
 	}
+	printf("Diff=%f\n", res);
 	if((read = getline(&line, &len, fd)) == -1){
 		printf("No base\n");
 		return -1;
@@ -604,11 +605,21 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 	float base;
 	float new_base = 0;
 	float unit_d;
-	float ftemp=0;
+	float ftemp=0, ftemp2=0;
 	float fres=0;
 	float* new_v0=NULL;
 	float** pca_buff=NULL;	
 	float** prc_data;
+
+	if(DEBUG){
+		printf("[RECAL] Get prc data:\n");
+		for(i=0;i<5;i++){
+			for(j=0;j<PRC_SIZE;j++){
+				printf("[%f] ", data[i][j]);
+			}
+			printf("\n");
+		}
+	}
 	prc_data = malloc(5*sizeof(float*));
 	for(i=0;i<5;i++){
 		prc_data[i] = malloc(flen * sizeof(float));
@@ -616,7 +627,7 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 			prc_data[i][j] = 0;
 		}
 	}
-
+	
 	fd1 = fopen(src_path, "r");
 	fd2 = fopen(tar_path, "w+");
 	if(fd1==NULL || fd2==NULL){
@@ -701,8 +712,8 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 				while(d!=NULL){
 					ftemp = atof(d);
 					for(i=0;i<5;i++){
-						ftemp = (pca_buff[i][temp] - ftemp)/5;
-						fres += (ftemp>=0) ? ftemp:-1*ftemp; 
+						ftemp2 = (pca_buff[i][temp] - ftemp);
+						fres += (ftemp2>=0) ? ftemp2:-1*ftemp2; 
 					}
 					temp++;
 					d = strtok(NULL, " ");
@@ -718,10 +729,13 @@ int Recal(char* src_path, char* tar_path, int flen, float data[5][PRC_SIZE], int
 				printf("get unit_d %f\n", unit_d);
 			}
 		}
+		// average over 5 samples
+		fres = fres/5;
 		if(count<3){
 			printf("Error: model incomplete\n");
 			return -1;
 		}
+		printf("Avg diff over 5 samples=%f\n", fres);
 		// Recalculate the unit_d
 		if(fres-base>=0){
 			sprintf(str, "%f\n", (fres-base)/label);
@@ -876,6 +890,7 @@ int main(int argc, char* argv[])
 	
 	/*Load model if existed and then estimate occupancy*/
 	Playback_record(1, label, vol, buffer_AIN_2, output_buff);
+	sleep(1);
 	for(i=0;i<5;i++){
 		Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
 		sleep(1);
