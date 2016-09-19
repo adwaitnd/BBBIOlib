@@ -18,7 +18,8 @@
 #define SAMPLE_SIZE 57600
 // Presence: 50ms with 192k
 #define TONE_SAMPLE_SIZE 9600
-#define PATH_TO_MODEL "/home/debian/Model.txt"  // File name of the model
+#define PATH_TO_MODEL "/home/debian/Model.txt"  // File name of the org model
+//#define PATH_TO_MODEL "/home/debian/Model_LMS.txt"  // File name of the LMS model
 #define PATH_TO_TEMP_MODEL "/home/debian/New_Model.txt"  // File name of the temp model
 #define RAW_ENABLE	0	// Keep raw data or not
 #define CLEN	0.03
@@ -28,7 +29,7 @@
 #define END_F	21000
 #define EX_BAND 200 //Extra bandwidth when filtering
 #define PRC_SIZE 500 // Should be larger than the data size after FFT
-#define PRC_WSIZE 51 // Should be equals to the fft size of segmented data -> (BAND+EXTRA_BAND):192k/2(Hz) = X*2:8192(next power of WLEN) 
+#define PRC_WSIZE 51 // Should be equals to the fft size of each data segment -> (BAND+EXTRA_BAND):(192k/2)(Hz) = PRC_WSIZE*2:8192(next power of WLEN) 
 #define WLEN	CLEN*FS // Window sizes when doing FFT
 #define WNUM	4 //Number of windows for gen training features
 #define FSIZE	WNUM*PRC_WSIZE //ttl feature size
@@ -230,8 +231,8 @@ float Occ_est_LMS(char* path, int flen, float* data, float weight){
 	char* d;
 	/*
 	The model should have the following format: 
-	[v_norm, v_mean, num_pca, v_pca, v_0, base, unit_d]
-	Estmation = (abs((data/v_norm - v_mean)*v_pca*weight - v_0) - base)/unit_d
+	[v_norm, v_mean, num_pca, v_pca, v_0, v_lms]
+	Estmation = ((data/v_norm - v_mean)*v_pca*weight - v_0)*v_LMS
 	*/
 	printf("Reading model at %s\n", path);
 	fd = fopen(path, "r");
@@ -324,17 +325,13 @@ float Occ_est_LMS(char* path, int flen, float* data, float weight){
 		printf("No v_0\n");
 		return -1;
 	}
-	// parse each line
+	// parse v_0
 	temp = 0;
 	d  = strtok(line, " ");
 	while(d!=NULL){
-		//TODO: Check if too many features
 		ftemp = atof(d);
 		pca_buff[temp] = pca_buff[temp] - ftemp;
-		//if(pca_buff[temp]<0){
-		//	pca_buff[temp] = -1*pca_buff[temp];
-		//}
-		res += pca_buff[temp]>=0 ? pca_buff[temp]:-1*pca_buff[temp];
+		//res += pca_buff[temp]>=0 ? pca_buff[temp]:-1*pca_buff[temp];
 		temp++;
 		d = strtok(NULL, " ");
 	}
@@ -348,25 +345,31 @@ float Occ_est_LMS(char* path, int flen, float* data, float weight){
 		}
 		printf("End of PCA distance\n");
 	}
-	printf("Diff=%f\n", res);
 	if((read = getline(&line, &len, fd)) == -1){
-		printf("No base\n");
+		printf("No v_LMS\n");
 		return -1;
 	}
-	ftemp = atof(line); // base
-	res -= ftemp;
-	if(DEBUG){
-		printf("RES=%f after base\n", res);
+	// parse v_LMS
+	temp = 0;
+	res = 0;
+	d  = strtok(line, " ");
+	while(d!=NULL){
+		ftemp = atof(d);
+		//pca_buff[temp] = pca_buff[temp] - ftemp;
+		res += ftemp*pca_buff[temp];
+		temp++;
+		d = strtok(NULL, " ");
 	}
-	if((read = getline(&line, &len, fd)) == -1){
-		printf("No unit_d\n");
+	if (temp<npca){
+		printf("Error: Too few PCA features for LMS, get %d\n", temp);
 		return -1;
 	}
-	ftemp = atof(line); // unit_d
-	res = res/ftemp;
-	if(DEBUG){
-		printf("RES=%f after unit_d\n", res);
+
+	if((read = getline(&line, &len, fd)) == -1){
+		printf("No scale\n");
+		return -1;
 	}
+	ftemp = atof(line); // scale
 
 	fclose(fd);
 	free(line);
