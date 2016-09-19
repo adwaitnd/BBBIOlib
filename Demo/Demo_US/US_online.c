@@ -213,6 +213,170 @@ float Occ_est(char* path, int flen, float* data, float weight){
 	return res;
 }
 
+float Occ_est_LMS(char* path, int flen, float* data, float weight){
+	int i, j;
+	/*Load the model from path*/
+	FILE* fd;
+	char* line = NULL;
+	size_t len=0;
+	ssize_t read;
+	float* res_buff = malloc(flen*sizeof(float));
+	float* pca_buff = NULL;	
+	float ftemp=0;
+	float res=0;
+	int count=0;	
+	int temp = 0;
+	int npca = 0;
+	char* d;
+	/*
+	The model should have the following format: 
+	[v_norm, v_mean, num_pca, v_pca, v_0, base, unit_d]
+	Estmation = (abs((data/v_norm - v_mean)*v_pca*weight - v_0) - base)/unit_d
+	*/
+	printf("Reading model at %s\n", path);
+	fd = fopen(path, "r");
+	if(fd==NULL){
+		printf("Model not found\n");
+		return -1;
+	}	
+	//TODO:for debugging	
+	if(DEBUG){	
+		for(i=0;i<flen;i++){
+			printf("%f ", data[i]);
+		}
+		printf("End of Start\n");
+	}
+	while( count<2 && (read = getline(&line, &len, fd))!= -3 ){
+		count++;
+		// parse each line
+		temp = 0;
+		d  = strtok(line, " ");
+		while(d!=NULL){
+			//TODO: add too many feature check
+			ftemp = atof(d);
+			if(count==1){
+				res_buff[temp] = data[temp]/ftemp;
+			}
+			else if(count==2){
+				res_buff[temp] = res_buff[temp]-ftemp;
+			}
+			temp++;
+			d = strtok(NULL, " ");
+		}
+		if (temp<flen){
+			printf("Error: Too few features in line %d\n", count);
+			return -1;
+		}
+		if(DEBUG){	
+			//TODO:for debugging		
+			for(i=0;i<flen;i++){
+				printf("%f ", res_buff[i]);
+			}
+			printf("End of %d\n", count);
+		}
+	}
+	if(count<2){
+		printf("Error: model incomplete\n");
+		return -1;
+	}
+	// Read v_pca
+	if((read = getline(&line, &len, fd)) == -1){
+		printf("No num_pca\n");
+		return -1;
+	}
+	npca = atoi(line);
+	if(npca<0 || npca>20){
+		printf("Error: num_pca incorrect\n");
+		return -1;
+	}
+	pca_buff = malloc(npca*sizeof(float));
+	for(i=0;i<npca;i++){
+		pca_buff[i]=0;
+		read = getline(&line, &len, fd);
+		if(read==-1){
+			printf("V_pca incomplete\n");
+			return -1;
+		}
+		temp=0;
+		d  = strtok(line, " ");
+		while(d!=NULL && temp<flen){
+			ftemp = atof(d);
+			//printf("[%f %f]", ftemp, res_buff[temp]);
+			pca_buff[i]+= res_buff[temp]*ftemp;
+			temp++;
+			d = strtok(NULL, " ");
+		}
+		if (temp<flen){
+			printf("Error: Too few features in VPCA\n");
+			return -1;
+		}
+	}
+	//TODO:multiply pca_buff by weight based on presence detection
+	if(DEBUG){	
+		printf("Projected data:\n");
+		for(i=0;i<npca;i++){
+			printf("%f ", pca_buff[i]);
+		}
+		printf("End of PCA\n");
+	}
+	//Get v_0, base, unit_d 	
+	if((read = getline(&line, &len, fd)) == -1){
+		printf("No v_0\n");
+		return -1;
+	}
+	// parse each line
+	temp = 0;
+	d  = strtok(line, " ");
+	while(d!=NULL){
+		//TODO: Check if too many features
+		ftemp = atof(d);
+		pca_buff[temp] = pca_buff[temp] - ftemp;
+		//if(pca_buff[temp]<0){
+		//	pca_buff[temp] = -1*pca_buff[temp];
+		//}
+		res += pca_buff[temp]>=0 ? pca_buff[temp]:-1*pca_buff[temp];
+		temp++;
+		d = strtok(NULL, " ");
+	}
+	if (temp<npca){
+		printf("Error: Too few PCA features, get %d\n", temp);
+		return -1;
+	}
+	if(DEBUG){	
+		for(i=0;i<npca;i++){
+			printf("%f ", pca_buff[i]);
+		}
+		printf("End of PCA distance\n");
+	}
+	printf("Diff=%f\n", res);
+	if((read = getline(&line, &len, fd)) == -1){
+		printf("No base\n");
+		return -1;
+	}
+	ftemp = atof(line); // base
+	res -= ftemp;
+	if(DEBUG){
+		printf("RES=%f after base\n", res);
+	}
+	if((read = getline(&line, &len, fd)) == -1){
+		printf("No unit_d\n");
+		return -1;
+	}
+	ftemp = atof(line); // unit_d
+	res = res/ftemp;
+	if(DEBUG){
+		printf("RES=%f after unit_d\n", res);
+	}
+
+	fclose(fd);
+	free(line);
+	free(res_buff);
+	if(pca_buff!=NULL){
+		free(pca_buff);
+	}
+	return res;
+}
+
 int BBB_init(unsigned int* buffer_AIN_2){
 	/* BBBIOlib init*/
 	iolib_init();
