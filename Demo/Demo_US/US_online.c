@@ -1046,7 +1046,7 @@ int main(int argc, char* argv[])
 	 /* Start playback */
 	for(i=0;i<SAMPLES;i++){
 		Presence_record(100, buffer_AIN_2, tone_output[i]);
-		sleep(1);
+		sleep(2);
 	}
 	res_pre = Presence_detect(tone_output, 10, SPEC_THRES, ENERGY_THRES);
 	printf("*** [1]Presence decision:%f\n", res_pre);
@@ -1067,10 +1067,10 @@ int main(int argc, char* argv[])
 
 	recal_flag=0;
 	//if empty and the estimation is higher than 0.5, test again
-	if ((res_pre==0 && occ>=0.5) || RECAL){
+	if ((res_pre==0 && (occ>=0.5 || occ<=-0.5)) || RECAL){
 		for(i=0;i<SAMPLES;i++){
 			Presence_record(100, buffer_AIN_2, tone_output[i]);
-			sleep(1);
+			sleep(2);
 		}
 		res_pre = Presence_detect(tone_output, 10, SPEC_THRES, ENERGY_THRES);
 		printf("*** [2]Presence decision:%f\n", res_pre);
@@ -1083,7 +1083,8 @@ int main(int argc, char* argv[])
 		}
 	}
 	if(recal_flag){
-		printf("*** Occupancy: 0.00\n");
+		//printf("*** Occupancy: 0.00\n");
+		printf("Recalibrate complete.\n");
 	}
 	else{
 		printf("*** Occupancy: %f\n", occ);
