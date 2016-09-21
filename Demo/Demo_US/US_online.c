@@ -19,7 +19,7 @@
 // Presence: 50ms with 192k
 #define TONE_SAMPLE_SIZE 9600
 #define PATH_TO_MODEL "/home/debian/Model.txt"  // File name of the org model
-//#define PATH_TO_MODEL "/home/debian/Model_LMS.txt"  // File name of the LMS model
+#define PATH_TO_MODEL_LMS "/home/debian/Model_LMS.txt"  // File name of the LMS model
 #define PATH_TO_TEMP_MODEL "/home/debian/New_Model.txt"  // File name of the temp model
 #define RAW_ENABLE	0	// Keep raw data or not
 #define CLEN	0.03
@@ -255,10 +255,10 @@ float Occ_est_LMS(char* path, int flen, float* data, float weight){
 		while(d!=NULL){
 			//TODO: add too many feature check
 			ftemp = atof(d);
-			if(count==1){
+			if(count==1){ // /v_norm
 				res_buff[temp] = data[temp]/ftemp;
 			}
-			else if(count==2){
+			else if(count==2){ // -v_meam
 				res_buff[temp] = res_buff[temp]-ftemp;
 			}
 			temp++;
@@ -366,10 +366,12 @@ float Occ_est_LMS(char* path, int flen, float* data, float weight){
 	}
 
 	if((read = getline(&line, &len, fd)) == -1){
-		printf("No scale\n");
+		printf("No scaler\n");
 		return -1;
 	}
 	ftemp = atof(line); // scale
+
+	printf("Diff = %f, scaler=%f\n", res, ftemp);	
 
 	fclose(fd);
 	free(line);
@@ -1007,7 +1009,8 @@ int main(int argc, char* argv[])
 {
 	//int local_size=PRC_SIZE, wsize = WLEN;
 	unsigned int buffer_AIN_2[BUFFER_SIZE]={0};
-	char model_path[30] = PATH_TO_MODEL;
+	//char model_path[30] = PATH_TO_MODEL;
+	char model_path_lms[30] = PATH_TO_MODEL_LMS;
 	char temp_model_path[30] = PATH_TO_TEMP_MODEL;
 	int vol = 85;
 	int label = -1;
@@ -1058,12 +1061,10 @@ int main(int argc, char* argv[])
 	Playback_record(1, label, vol, buffer_AIN_2, output_buff);
 	sleep(1);
 	for(i=0;i<SAMPLES;i++){
-		//Playback_record(flag, label, vol, buffer_AIN_2, output_buff);
-		//sleep(1);
-		//res_old[i] = Occ_est(model_path, FSIZE, output_buff, 0.5);
 		Playback_record(flag, label, vol, buffer_AIN_2, recal_buff[i]);
 		sleep(1);
-		res_old[i] = Occ_est(model_path, FSIZE, recal_buff[i], 0.5);
+		//res_old[i] = Occ_est(model_path, FSIZE, recal_buff[i], 0.5);
+		res_old[i] = Occ_est_LMS(model_path_lms, FSIZE, recal_buff[i], 0.5);
 	}
 	qsort(res_old, SAMPLES, sizeof(float), compare);	
 	occ = res_old[2];
@@ -1081,7 +1082,7 @@ int main(int argc, char* argv[])
 		if (res_pre==0 || RECAL){
 			// Recalibration 
 			printf("*** Start recalibration ...\n");
-			Recal(model_path, temp_model_path, FSIZE, recal_buff, label);
+			//Recal(model_path, temp_model_path, FSIZE, recal_buff, label);
 			recal_flag=1;
 		}
 	}
