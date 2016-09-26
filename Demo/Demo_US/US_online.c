@@ -258,7 +258,7 @@ float Occ_est_LMS(char* path, int flen, float* data, float weight){
 			if(count==1){ // /v_norm
 				res_buff[temp] = data[temp]/ftemp;
 			}
-			else if(count==2){ // -v_meam
+			else if(count==2){ // - v_meam
 				res_buff[temp] = res_buff[temp]-ftemp;
 			}
 			temp++;
@@ -330,20 +330,14 @@ float Occ_est_LMS(char* path, int flen, float* data, float weight){
 	d  = strtok(line, " ");
 	while(d!=NULL){
 		ftemp = atof(d);
+		// - v_0
 		pca_buff[temp] = pca_buff[temp] - ftemp;
-		//res += pca_buff[temp]>=0 ? pca_buff[temp]:-1*pca_buff[temp];
 		temp++;
 		d = strtok(NULL, " ");
 	}
 	if (temp<npca){
 		printf("Error: Too few PCA features, get %d\n", temp);
 		return -1;
-	}
-	if(DEBUG){	
-		for(i=0;i<npca;i++){
-			printf("%f ", pca_buff[i]);
-		}
-		printf("End of PCA distance\n");
 	}
 	if((read = getline(&line, &len, fd)) == -1){
 		printf("No v_LMS\n");
@@ -379,7 +373,7 @@ float Occ_est_LMS(char* path, int flen, float* data, float weight){
 	if(pca_buff!=NULL){
 		free(pca_buff);
 	}
-	return res;
+	return res*ftemp;
 }
 
 int BBB_init(unsigned int* buffer_AIN_2){
@@ -1005,11 +999,250 @@ int Recal(char* src_path, char* tar_path, int flen, float data[SAMPLES][PRC_SIZE
 	return 0;
 }
 
+int Recal_LMS(char* src_path, char* tar_path, int flen, float data[SAMPLES][PRC_SIZE], int label){
+	// The model should have the following format: 
+	// [v_norm, v_mean, num_pca, v_pca, v_0, XX, scaler]
+	// The function updates only the v_0 and scaler
+	int i, j, temp, offset;
+	FILE* fd1;
+	FILE* fd2;
+	char* line = NULL;
+	char* d;
+	size_t len=0;
+	ssize_t read;
+	int count = 0;
+	int npca = 0;
+	char str[200];
+	char v_lms[100]="";
+	float new_base = 0;
+	float scaler;
+	float ftemp=0, ftemp2=0;
+	float fres=0;
+	float* new_v0=NULL;
+	float** pca_buff=NULL;	
+	float** prc_data;
+
+	if(DEBUG){
+		printf("[RECAL] Get prc data:\n");
+		for(i=0;i<SAMPLES;i++){
+			for(j=0;j<PRC_SIZE;j++){
+				printf("[%f] ", data[i][j]);
+			}
+			printf("\n");
+		}
+	}
+	prc_data = malloc(SAMPLES*sizeof(float*));
+	for(i=0;i<SAMPLES;i++){
+		prc_data[i] = malloc(flen * sizeof(float));
+		for(j=0;j<flen;j++){
+			prc_data[i][j] = 0;
+		}
+	}
+	
+	fd1 = fopen(src_path, "r");
+	fd2 = fopen(tar_path, "w+");
+	if(fd1==NULL || fd2==NULL){
+		printf("Model open failed.\n");
+		return -1;
+	}	
+
+	while( count<3 && (read = getline(&line, &len, fd1))!= -3 ){
+		count++;
+		// copy each line
+		fwrite(line, sizeof(char), strlen(line), fd2);
+		// extract elements
+		temp = 0;
+		d  = strtok(line, " ");
+		while(d!=NULL){
+			ftemp = atof(d);
+			for(i=0;i<SAMPLES;i++){
+				if(count==1){
+					prc_data[i][temp] = data[i][temp]/ftemp;
+				}
+				else if(count==2){
+					prc_data[i][temp] = prc_data[i][temp]-ftemp;
+				}
+			}
+			temp++;
+			d = strtok(NULL, " ");
+		}
+	}
+	if(count<3){
+		printf("Error: model incomplete\n");
+		return -1;
+	}
+	count=0;
+	npca = atoi(line);
+	if(npca<0 || npca>20){
+		printf("Error: num_pca incorrect\n");
+		return -1;
+	}
+	new_v0 = malloc(npca*sizeof(float));
+	for(i=0;i<npca;i++){
+		new_v0[i] = 0;
+	}
+	pca_buff = malloc(SAMPLES*sizeof(float*));
+	for(i=0;i<SAMPLES;i++){
+		pca_buff[i] = malloc(npca*sizeof(float));
+		for(j=0;j<npca;j++){
+			pca_buff[i][j] = 0;
+		}
+	}
+	for(i=0;i<npca;i++){
+		read = getline(&line, &len, fd1);
+		if(read==-1){
+			printf("V_pca incomplete\n");
+			return -1;
+		}
+		fwrite(line, sizeof(char), strlen(line), fd2);
+		// project with the average location 
+		temp=0;
+		d  = strtok(line, " ");
+		while(d!=NULL && temp<flen){
+			ftemp = atof(d);
+			//printf("[%f %f]", ftemp, res_buff[temp]);
+			for(j=0;j<SAMPLES;j++){
+				pca_buff[j][i] += prc_data[j][temp]*ftemp;
+			}
+			temp++;
+			d = strtok(NULL, " ");
+		}
+	}
+	
+	// Two scenarios here:
+	// [1]: If forced to recalibrate with label, we just need to recalibrate the scaler
+	fres = 0;
+	if(RECAL==1 && label>0){
+		while( count<3 && (read = getline(&line, &len, fd1))!= -3 ){
+			count++;
+			// copy each line
+			if (count==1){
+				printf("get v_0:%s", line);
+				fwrite(line, sizeof(char), strlen(line), fd2);
+				temp = 0;
+			}
+			else if (count==2){
+				printf("get v_LMS %s", line);
+				fwrite(line, sizeof(char), strlen(line), fd2);
+				temp=0;
+				d  = strtok(line, " ");
+				while(d!=NULL && temp<flen){
+					ftemp = atof(d);
+					//printf("[%f %f]", ftemp, res_buff[temp]);
+					for(j=0;j<SAMPLES;j++){
+						fres += pca_buff[j][temp]*ftemp;
+					}
+					temp++;
+					d = strtok(NULL, " ");
+				}
+			}
+			else if (count==3){
+				scaler = atof(line);
+				printf("get scaler %f\n", scaler);
+			}
+		}
+		// average over samples
+		fres = fres/SAMPLES;
+		if(count<3){
+			printf("Error: model incomplete\n");
+			return -1;
+		}
+		// Recalculate the scaler
+		if(fres>0){
+			sprintf(str, "%f\n", label/fres);
+			printf("New scaler:%s", str);
+			fwrite(str, sizeof(char), strlen(str), fd2);
+		}
+		else{
+			printf("Scaler less than 0, abort recalibration ...\n");
+			fwrite(line, sizeof(char), strlen(line), fd2);
+		}
+	}
+	else{
+	// [2]: Otherwise we calculate the new v_0 and variance from prcessed data in pca_buff[SAMPLES][npca], and then update unit_d
+		while( count<3 && (read = getline(&line, &len, fd1))!= -3 ){
+			count++;
+			// copy each line
+			if (count==1){
+				printf("get v_0:%s", line);
+			}
+			else if (count==2){
+				printf("get v_LMS %s", line);
+				strcpy(v_lms, line);
+			}
+			else if (count==3){
+				scaler = atof(line);
+				printf("get scaler %f\n", scaler);
+			}
+		}
+		if(count<3){
+			printf("Error: model incomplete\n");
+			return -1;
+		}
+		if(DEBUG){
+			for(i=0;i<SAMPLES;i++){
+				for(j=0;j<npca;j++){
+					printf("[%f]", pca_buff[i][j]);
+				}
+				printf("\n");
+			}
+		}
+		for(i=0;i<SAMPLES;i++){
+			for(j=0;j<npca;j++){
+				new_v0[j]+=pca_buff[i][j]/SAMPLES;
+			}
+		}
+		// write new v0
+		temp = 0;
+		offset = 0;
+		for(i=0;i<npca;i++){
+			temp = sprintf(str+offset, "%f ", new_v0[i]);
+			if(temp<0){
+				printf("Buffering error\n");
+				return -1;
+			}
+			offset+=temp;
+		}
+		sprintf(str+offset, "\n");
+		printf("New v_0:%s", str);
+		fwrite(str, sizeof(char), strlen(str), fd2);
+		// write V_LMS
+		fwrite(v_lms, sizeof(char), strlen(v_lms), fd2);
+		// write scaler
+		sprintf(str, "%f\n", scaler);
+		fwrite(str, sizeof(char), strlen(str), fd2);
+	}
+
+	printf("*** Update complete.\n");
+	fclose(fd1);
+	fclose(fd2);
+	for(i=0;i<SAMPLES;i++){
+		free(prc_data[i]);
+	}
+	free(prc_data);
+	if(pca_buff!=NULL){
+		for(i=0;i<SAMPLES;i++){
+			free(pca_buff[i]);
+		}
+		free(pca_buff);
+	}
+	if(new_v0!=NULL){
+		free(new_v0);
+	}
+	
+	//rename 
+	temp = rename(tar_path, src_path);
+
+	return 0;
+}
+
+
+
 int main(int argc, char* argv[])
 {
 	//int local_size=PRC_SIZE, wsize = WLEN;
 	unsigned int buffer_AIN_2[BUFFER_SIZE]={0};
-	//char model_path[30] = PATH_TO_MODEL;
+	char model_path[30] = PATH_TO_MODEL;
 	char model_path_lms[30] = PATH_TO_MODEL_LMS;
 	char temp_model_path[30] = PATH_TO_TEMP_MODEL;
 	int vol = 85;
@@ -1083,6 +1316,7 @@ int main(int argc, char* argv[])
 			// Recalibration 
 			printf("*** Start recalibration ...\n");
 			//Recal(model_path, temp_model_path, FSIZE, recal_buff, label);
+			Recal_LMS(model_path_lms, temp_model_path, FSIZE, recal_buff, label);
 			recal_flag=1;
 		}
 	}
