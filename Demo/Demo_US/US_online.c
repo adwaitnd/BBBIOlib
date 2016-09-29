@@ -31,7 +31,7 @@
 #define PRC_SIZE 700 // Should be larger than the data size after FFT
 #define PRC_WSIZE 51 // Should be equals to the fft size of each data segment -> (BAND+EXTRA_BAND):(192k/2)(Hz) = PRC_WSIZE*2:8192(next power of WLEN) 
 #define WLEN	CLEN*FS // Window sizes when doing FFT
-#define WNUM	12 //Number of windows for gen training features
+#define WNUM	9 //Number of windows for gen training features
 #define FSIZE	WNUM*PRC_WSIZE //ttl feature size
 #define MAX_OCC	20
 #define TONE_DELAY 192 //0.001*FS
