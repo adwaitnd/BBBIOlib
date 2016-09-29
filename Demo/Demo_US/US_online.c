@@ -28,17 +28,17 @@
 #define START_F	20000
 #define END_F	21000
 #define EX_BAND 200 //Extra bandwidth when filtering
-#define PRC_SIZE 500 // Should be larger than the data size after FFT
+#define PRC_SIZE 700 // Should be larger than the data size after FFT
 #define PRC_WSIZE 51 // Should be equals to the fft size of each data segment -> (BAND+EXTRA_BAND):(192k/2)(Hz) = PRC_WSIZE*2:8192(next power of WLEN) 
 #define WLEN	CLEN*FS // Window sizes when doing FFT
-#define WNUM	4 //Number of windows for gen training features
+#define WNUM	12 //Number of windows for gen training features
 #define FSIZE	WNUM*PRC_WSIZE //ttl feature size
 #define MAX_OCC	20
 #define TONE_DELAY 192 //0.001*FS
 #define TONE_PRC_SIZE 17 //calculated like PRC_WSIZE 
 #define DELAY	2
-#define ENERGY_THRES	0.005
-#define SPEC_THRES	0.005
+#define ENERGY_THRES	0.001
+#define SPEC_THRES	0.001
 #define SAMPLES	5
 
 //For debugging
@@ -687,7 +687,7 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 	} 
 	/* FFT the segmented raw data based on window size*/
 	for(i=0;i<WNUM;i++){ 
-		input_pt->data = (float*)&(input[(i+1)*wsize]); //ignore the first window since its crosstalk
+		input_pt->data = (float*)&(input[wsize+((i-1)*wsize/3)]); //ignore the first window since it's mostly crosstalk
 		//input_pt->data = (float*)&(buffer_AIN_2[i*wsize]);
 		Prep_fft(input_pt, FS, START_F-(EX_BAND/2), END_F+(EX_BAND/2), prc_pt);
 		for(j=0;j<PRC_WSIZE;j++){
@@ -738,15 +738,19 @@ int Playback_record(int flag, int label, int vol, unsigned int buffer_AIN_2[BUFF
 
 int logger(float occ, int recal){
 	FILE* fd;
+	FILE* fd2;
 	char buff[20];
 	fd = fopen("log.txt", "a");
+	fd2 = fopen("realplot.txt", "w+");
 	if(fd==NULL){
 		printf("Logger open failed.\n");
 		return -1;
 	}	
 	sprintf(buff, "%f %d\n", occ, recal);
 	fwrite(buff, sizeof(char), strlen(buff), fd);
+	fwrite(buff, sizeof(char), strlen(buff), fd2);
 	fclose(fd);
+	fclose(fd2);
 	
 	return 0;
 }
@@ -1279,10 +1283,10 @@ int main(int argc, char* argv[])
 
 	BBB_init(buffer_AIN_2);
 
+	/* Start playback */
 	//warm up
+	
 	Playback_record(1, label, vol, buffer_AIN_2, output_buff);
-
-	 /* Start playback */
 	for(i=0;i<SAMPLES;i++){
 		Presence_record(100, buffer_AIN_2, tone_output[i]);
 		sleep(2);
@@ -1290,6 +1294,8 @@ int main(int argc, char* argv[])
 	res_pre = Presence_detect(tone_output, 10, SPEC_THRES, ENERGY_THRES);
 	printf("*** [1]Presence decision:%f\n", res_pre);
 	
+
+
 	/*Load model if existed and then estimate occupancy*/
 	Playback_record(1, label, vol, buffer_AIN_2, output_buff);
 	sleep(1);
@@ -1303,6 +1309,7 @@ int main(int argc, char* argv[])
 	occ = res_old[2];
 
 	recal_flag=0;
+	/*	
 	//if empty and the estimation is higher than 0.5, test again
 	if ((res_pre==0 && (occ>=0.5 || occ<=-0.5)) || RECAL){
 		for(i=0;i<SAMPLES;i++){
@@ -1319,7 +1326,7 @@ int main(int argc, char* argv[])
 			Recal_LMS(model_path_lms, temp_model_path, FSIZE, recal_buff, label);
 			recal_flag=1;
 		}
-	}
+	}*/
 	if(recal_flag){
 		//printf("*** Occupancy: 0.00\n");
 		printf("Recalibrate complete.\n");

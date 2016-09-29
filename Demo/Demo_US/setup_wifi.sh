@@ -2,17 +2,17 @@
 #LOCATION=CIC
 LOCATION=$1
 
-route -n | grep 128.237.224.1
-if [ $? -eq 1 ]
-then
-	echo "Reseting IP table ..."
+#route -n | grep 128.237.224.1
+#if [ $? -eq 1 ]
+#then
+#	echo "Reseting IP table ..."
 	#route del default gw 192.168.1.1
-	route add default gw 128.237.224.1 
+#	route add default gw 128.237.224.1 
 	#ifdown wlan0
 	#sleep 3
 	#ifup wlan0
 	#sleep 15
-fi
+#fi
 
 MY_IP=$(ifconfig wlan0 | grep -w "inet" | awk '{print $2}' | sed 's/[A-Za-z:]*//g')
 
@@ -21,7 +21,7 @@ if [ $? -eq 1 ]
 then
 	ifup wlan0
 	sleep 15	
-	route add default gw 128.237.224.1 
+	#route add default gw 128.237.224.1 
 fi
 
 RES=$(ping 8.8.8.8 -I wlan0 -c 1 | egrep 'Unreachable|unreachable' | wc -l)

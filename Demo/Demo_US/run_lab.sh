@@ -1,8 +1,8 @@
 #!/bin/bash
 
-PERIOD=180
+PERIOD=60
 DELAY=2
-LOCATION=CICLAB
+LOCATION=CICLAB_NEW
 
 while true
 do
@@ -44,6 +44,8 @@ do
   #dump to server
   sshpass -p 'trash5566' ssh dump@sensor.andrew.cmu.edu "mkdir -p ~/data/$LOCATION/$DAY/"
   sshpass -p 'trash5566' scp /home/debian/BBBIOlib/Demo/Demo_US/data/*.{dat,jpeg} dump@sensor.andrew.cmu.edu:~/data/$LOCATION/$DAY/
+  #sshpass -p 'trash5566' scp /home/debian/BBBIOlib/Demo/Demo_US/data/*.{dat,raw} dump@sensor.andrew.cmu.edu:~/data/realplot/
+  #sshpass -p 'trash5566' scp /home/debian/BBBIOlib/Demo/Demo_US/realplot.txt dump@sensor.andrew.cmu.edu:~/data/realplot/
   if [ $? -eq 0 ]
   then
     echo "Data dump complete, cleaning up ..."
