@@ -25,10 +25,10 @@
 #define CLEN	0.03
 // These parameters should be consistent with the generated chirp file
 #define FS	192000
-#define START_F	20000
-#define END_F	21000
+#define START_F	21000
+#define END_F	23000
 #define EX_BAND 200 //Extra bandwidth when filtering
-#define PRC_SIZE 700 // Should be larger than the data size after FFT
+#define PRC_SIZE 500 // Should be larger than the data size after FFT
 #define PRC_WSIZE 51 // Should be equals to the fft size of each data segment -> (BAND+EXTRA_BAND):(192k/2)(Hz) = PRC_WSIZE*2:8192(next power of WLEN) 
 #define WLEN	CLEN*FS // Window sizes when doing FFT
 #define WNUM	9 //Number of windows for gen training features
@@ -214,7 +214,7 @@ float Occ_est(char* path, int flen, float* data, float weight){
 	return res;
 }
 
-float Occ_est_LMS(char* path, int flen, float* data, float weight){
+float Occ_est_LMS(char* path, int flen, float data[PRC_SIZE], float weight){
 	int i, j;
 	/*Load the model from path*/
 	FILE* fd;
@@ -235,6 +235,7 @@ float Occ_est_LMS(char* path, int flen, float* data, float weight){
 	Estmation = ((data/v_norm - v_mean)*v_pca*weight - v_0)*v_LMS
 	*/
 	printf("Reading model at %s\n", path);
+	
 	fd = fopen(path, "r");
 	if(fd==NULL){
 		printf("Model not found\n");
@@ -252,7 +253,7 @@ float Occ_est_LMS(char* path, int flen, float* data, float weight){
 		// parse each line
 		temp = 0;
 		d  = strtok(line, " ");
-		while(d!=NULL){
+		while(d!=NULL && temp<flen){
 			//TODO: add too many feature check
 			ftemp = atof(d);
 			if(count==1){ // /v_norm
@@ -286,7 +287,7 @@ float Occ_est_LMS(char* path, int flen, float* data, float weight){
 		return -1;
 	}
 	npca = atoi(line);
-	if(npca<0 || npca>20){
+	if(npca<0){
 		printf("Error: num_pca incorrect\n");
 		return -1;
 	}
