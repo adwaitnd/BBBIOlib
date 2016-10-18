@@ -21,12 +21,12 @@
 #define PATH_TO_MODEL "/home/debian/Model.txt"  // File name of the org model
 #define PATH_TO_MODEL_LMS "/home/debian/Model_LMS.txt"  // File name of the LMS model
 #define PATH_TO_TEMP_MODEL "/home/debian/New_Model.txt"  // File name of the temp model
-#define RAW_ENABLE	0	// Keep raw data or not
+#define RAW_ENABLE	1	// Keep raw data or not
 #define CLEN	0.03
 // These parameters should be consistent with the generated chirp file
 #define FS	192000
-#define START_F	21000
-#define END_F	23000
+#define START_F	22000
+#define END_F	30000
 #define EX_BAND 200 //Extra bandwidth when filtering
 #define PRC_SIZE 500 // Should be larger than the data size after FFT
 #define PRC_WSIZE 51 // Should be equals to the fft size of each data segment -> (BAND+EXTRA_BAND):(192k/2)(Hz) = PRC_WSIZE*2:8192(next power of WLEN) 
@@ -1241,7 +1241,20 @@ int Recal_LMS(char* src_path, char* tar_path, int flen, float data[SAMPLES][PRC_
 	return 0;
 }
 
+int feature_reform(float data[PRC_SIZE], int new_size){
 
+	int i=0, j=0, count=1;
+	for(j=51;j<PRC_WSIZE;j+=new_size){
+		for(i=0;i<PRC_WSIZE;i++){
+			data[i] += data[i+j];
+		}
+		count++;
+	}
+	for(i=0;i<PRC_WSIZE;i++){
+		data[i] = data[i]/count;
+	}
+	return 0;
+}
 
 int main(int argc, char* argv[])
 {
@@ -1304,7 +1317,10 @@ int main(int argc, char* argv[])
 		Playback_record(flag, label, vol, buffer_AIN_2, recal_buff[i]);
 		sleep(1);
 		//res_old[i] = Occ_est(model_path, FSIZE, recal_buff[i], 0.5);
-		res_old[i] = Occ_est_LMS(model_path_lms, FSIZE, recal_buff[i], 0.5);
+		feature_reform(recal_buff[i], PRC_WSIZE);
+		// this is the orig
+		//res_old[i] = Occ_est_LMS(model_path_lms, FSIZE, recal_buff[i], 0.5);
+		res_old[i] = Occ_est_LMS(model_path_lms, PRC_WSIZE, recal_buff[i], 0.5);
 	}
 	qsort(res_old, SAMPLES, sizeof(float), compare);	
 	occ = res_old[2];
